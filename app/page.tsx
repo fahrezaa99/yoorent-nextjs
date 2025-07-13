@@ -11,9 +11,10 @@ import FAQSection from "@/components/FAQSection";
 import Footer from "@/components/Footer";
 import { supabase } from "@/lib/supabaseClient";
 import { useEffect, useState } from "react";
+import type { User } from "@supabase/supabase-js"; // Tambahan penting!
 
 export default function HomePage() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null); // Tipe sudah benar!
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
