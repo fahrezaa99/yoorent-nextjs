@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from 'react';
-import { supabase } from '../lib/supabaseClient'; // Pastikan path ke supabaseClient.ts benar
+import { supabase } from '../lib/supabaseClient';
 
 const LoginManual: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -20,8 +20,7 @@ const LoginManual: React.FC = () => {
     if (error) {
       setError(error.message);
     } else {
-      // Login sukses
-      window.location.href = '/'; // atau pakai router.push jika di Next.js
+      window.location.href = '/';
     }
   };
 

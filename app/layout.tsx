@@ -2,7 +2,6 @@ import './globals.css'
 import { Inter } from 'next/font/google'
 import SmoothLayout from '@/components/SmoothLayout'
 import ClientLayout from '@/components/ClientLayout'
-import { supabase } from '@/lib/supabaseClient';
 
 const inter = Inter({
   subsets: ['latin'],

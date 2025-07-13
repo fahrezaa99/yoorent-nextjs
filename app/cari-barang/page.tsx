@@ -1,45 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient"; // pastikan path sesuai
 import BookingPopup from "@/components/BookingPopup";
-
-const dummyProducts = [
-  {
-    id: 1,
-    name: "Canon EOS 80D",
-    image: "https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=400&q=80",
-    location: "Jakarta",
-    rating: 4.8,
-    price: 90000,
-    category: "Kamera",
-  },
-  {
-    id: 2,
-    name: "DJI Mavic Air 2",
-    image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80",
-    location: "Bandung",
-    rating: 4.9,
-    price: 200000,
-    category: "Drone",
-  },
-  {
-    id: 3,
-    name: "Tenda Camping Besar",
-    image: "https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=400&q=80",
-    location: "Bogor",
-    rating: 4.7,
-    price: 50000,
-    category: "Camping",
-  },
-  {
-    id: 4,
-    name: "Macbook Pro M1",
-    image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=400&q=80",
-    location: "Surabaya",
-    rating: 4.95,
-    price: 120000,
-    category: "Laptop",
-  },
-];
 
 const categories = ["Semua", "Kamera", "Drone", "Laptop", "Camping"];
 const locations = ["Semua", "Jakarta", "Bandung", "Bogor", "Surabaya"];
@@ -59,28 +21,48 @@ export default function CariBarangPage() {
   const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [selectedLocation, setSelectedLocation] = useState("Semua");
   const [selectedHarga, setSelectedHarga] = useState("Semua");
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Booking popup state
   const [openBooking, setOpenBooking] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
-  const filtered = dummyProducts.filter((p) =>
-    (selectedCategory === "Semua" || p.category === selectedCategory) &&
-    (selectedLocation === "Semua" || p.location === selectedLocation) &&
+  // Fetch barang dari Supabase
+  useEffect(() => {
+    async function fetchBarang() {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("barang")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (!error) setProducts(data || []);
+      setLoading(false);
+    }
+    fetchBarang();
+  }, []);
+
+  // Filtering barang
+  const filtered = products.filter((p) =>
+    (selectedCategory === "Semua" || p.kategori === selectedCategory) &&
+    (selectedLocation === "Semua" || p.lokasi === selectedLocation) &&
     (selectedHarga === "Semua" ||
-      (p.price >= hargaRanges.find(h => h.label === selectedHarga)!.min &&
-       p.price <= hargaRanges.find(h => h.label === selectedHarga)!.max)
+      (p.harga >= hargaRanges.find(h => h.label === selectedHarga)!.min &&
+       p.harga <= hargaRanges.find(h => h.label === selectedHarga)!.max)
     ) &&
-    (p.name.toLowerCase().includes(search.toLowerCase()) ||
-     p.location.toLowerCase().includes(search.toLowerCase()))
+    (
+      (p.nama && p.nama.toLowerCase().includes(search.toLowerCase())) ||
+      (p.lokasi && p.lokasi.toLowerCase().includes(search.toLowerCase()))
+    )
   );
 
   const handleSewaClick = (product: any) => {
     setSelectedProduct({
-      nama: product.name,
-      lokasi: product.location,
-      harga: product.price,
-      foto: product.image,
+      nama: product.nama,
+      lokasi: product.lokasi,
+      harga: product.harga,
+      foto: product.foto,
     });
     setOpenBooking(true);
   };
@@ -88,7 +70,9 @@ export default function CariBarangPage() {
   return (
     <main className="min-h-screen bg-blue-50/60 pt-28 px-2 pb-12">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl md:text-4xl font-bold text-center text-blue-700 mb-8">Cari Barang Sewa</h1>
+        <h1 className="text-3xl md:text-4xl font-bold text-center text-blue-700 mb-8">
+          Cari Barang Sewa
+        </h1>
         {/* Search */}
         <input
           type="text"
@@ -144,37 +128,42 @@ export default function CariBarangPage() {
 
         {/* Grid Barang */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-7">
-          {filtered.map((product) => (
-            <div
-              key={product.id}
-              className="bg-white rounded-2xl shadow-md border border-gray-100 flex flex-col overflow-hidden hover:scale-[1.025] hover:shadow-xl transition"
-            >
-              <img
-                src={product.image}
-                alt={product.name}
-                className="w-full h-44 object-cover rounded-t-2xl"
-              />
-              <div className="p-4 flex-1 flex flex-col">
-                <div className="flex items-center text-gray-500 text-xs mb-1">
-                  <span>{product.location}</span>
-                  <span className="mx-2">·</span>
-                  <span className="flex items-center">
-                    <span className="text-yellow-400 text-base mr-1">★</span>
-                    {product.rating}
-                  </span>
+          {loading ? (
+            <>
+              {[...Array(4)].map((_, idx) => (
+                <div
+                  key={idx}
+                  className="bg-white rounded-2xl shadow-md border border-gray-100 h-80 animate-pulse"
+                />
+              ))}
+            </>
+          ) : filtered.length > 0 ? (
+            filtered.map((product) => (
+              <div
+                key={product.id}
+                className="bg-white rounded-2xl shadow-md border border-gray-100 flex flex-col overflow-hidden hover:scale-[1.025] hover:shadow-xl transition"
+              >
+                <img
+                  src={product.foto}
+                  alt={product.nama}
+                  className="w-full h-44 object-cover rounded-t-2xl"
+                />
+                <div className="p-4 flex-1 flex flex-col">
+                  <div className="flex items-center text-gray-500 text-xs mb-1">
+                    <span>{product.lokasi}</span>
+                  </div>
+                  <h3 className="font-bold text-base text-gray-900 mb-1">{product.nama}</h3>
+                  <div className="text-lg font-semibold text-blue-600 mb-3">{formatRupiah(product.harga)}</div>
+                  <button
+                    className="mt-auto w-full bg-gradient-to-r from-blue-600 via-green-500 to-blue-400 text-white font-bold py-2 rounded-xl shadow hover:scale-105 transition-all duration-200"
+                    onClick={() => handleSewaClick(product)}
+                  >
+                    Sewa Sekarang
+                  </button>
                 </div>
-                <h3 className="font-bold text-base text-gray-900 mb-1">{product.name}</h3>
-                <div className="text-lg font-semibold text-blue-600 mb-3">{formatRupiah(product.price)}</div>
-                <button
-                  className="mt-auto w-full bg-gradient-to-r from-blue-600 via-green-500 to-blue-400 text-white font-bold py-2 rounded-xl shadow hover:scale-105 transition-all duration-200"
-                  onClick={() => handleSewaClick(product)}
-                >
-                  Sewa Sekarang
-                </button>
               </div>
-            </div>
-          ))}
-          {filtered.length === 0 && (
+            ))
+          ) : (
             <div className="col-span-full text-center text-gray-500 py-8">
               Barang tidak ditemukan.
             </div>

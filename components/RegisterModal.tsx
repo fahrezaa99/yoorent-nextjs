@@ -1,165 +1,111 @@
 "use client";
-import React, { useRef, useState } from "react";
-import { supabase } from "../lib/supabaseClient"; // Pastikan path sesuai struktur project
+import { useState } from "react";
+import { signIn } from "next-auth/react";
 
-export default function RegisterModal({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
-  const [ktpPreview, setKtpPreview] = useState<string | null>(null);
-  const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
-
+export default function RegisterModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-
-  const ktpInputRef = useRef<HTMLInputElement>(null);
-  const selfieInputRef = useRef<HTMLInputElement>(null);
-
-  const handleKtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setKtpPreview(URL.createObjectURL(file));
-    }
-  };
-  const handleSelfieChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelfiePreview(URL.createObjectURL(file));
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-    setLoading(true);
-
-    // Register ke Supabase Auth
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-          phone: phone,
-          // NOTE: KTP/selfie belum di-upload ke Supabase Storage, hanya nama saja
-        },
-      },
-    });
-    setLoading(false);
-
-    if (error) {
-      setError(error.message);
-    } else {
-      setSuccess("Pendaftaran berhasil! Silakan cek email untuk verifikasi sebelum login.");
-      // Reset form (opsional)
-      setEmail("");
-      setPassword("");
-      setFullName("");
-      setPhone("");
-      setKtpPreview(null);
-      setSelfiePreview(null);
-    }
-  };
+  const [agree, setAgree] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   if (!open) return null;
 
   return (
-    <div>
-      <h2 className="text-lg font-bold text-center mb-3">Daftar ke <span className="text-blue-500">YooRent</span></h2>
-      <form className="flex flex-col gap-4" onSubmit={handleSubmit} autoComplete="off">
-        <input
-          className="input input-bordered w-full rounded-lg"
-          type="text"
-          placeholder="Nama Lengkap"
-          value={fullName}
-          onChange={e => setFullName(e.target.value)}
-          required
-        />
-        <input
-          className="input input-bordered w-full rounded-lg"
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          required
-        />
-        <input
-          className="input input-bordered w-full rounded-lg"
-          type="password"
-          placeholder="Password"
-          minLength={8}
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          required
-        />
-        <input
-          className="input input-bordered w-full rounded-lg"
-          type="tel"
-          placeholder="08xxxxxxxxxx"
-          pattern="08[0-9]{8,12}"
-          value={phone}
-          onChange={e => setPhone(e.target.value)}
-          required
-        />
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md p-8 mx-4">
+        <button
+          className="absolute right-4 top-4 text-gray-400 hover:text-blue-600 text-2xl"
+          onClick={onClose}
+          type="button"
+        >×</button>
+        <h2 className="text-2xl font-bold text-blue-700 text-center mb-2">Daftar ke YooRent</h2>
+        <form className="flex flex-col gap-4 mt-4">
+          <input
+            type="text"
+            placeholder="Nama Lengkap"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="rounded-lg border px-4 py-3 focus:border-blue-400 outline-none"
+            required
+          />
+          <input
+            type="email"
+            placeholder="you@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="rounded-lg border px-4 py-3 focus:border-blue-400 outline-none"
+            required
+          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full rounded-lg border px-4 py-3 focus:border-blue-400 outline-none"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-600"
+            >
+              {showPassword ? "🙈" : "👁️"}
+            </button>
+          </div>
+          <input
+            type="tel"
+            placeholder="08xxxxxxxxxx"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            className="rounded-lg border px-4 py-3 focus:border-blue-400 outline-none"
+            required
+          />
+          <div className="flex items-center gap-2 text-sm mt-2">
+            <input
+              type="checkbox"
+              checked={agree}
+              onChange={(e) => setAgree(e.target.checked)}
+            />
+            <span>Saya setuju dengan <a href="/syarat" className="text-blue-600 hover:underline">Syarat & Ketentuan</a></span>
+          </div>
+          <button
+            type="submit"
+            disabled={!agree}
+            className="bg-gradient-to-r from-blue-600 to-green-400 text-white font-semibold py-3 rounded-lg hover:opacity-90 transition disabled:opacity-50"
+          >
+            Daftar & Verifikasi
+          </button>
+        </form>
 
-        <label className="block text-sm font-semibold mb-1">Upload Foto KTP</label>
-        <input
-          ref={ktpInputRef}
-          type="file"
-          accept="image/*"
-          className="file-input file-input-bordered w-full"
-          onChange={handleKtpChange}
-          required
-        />
-        {ktpPreview && (
-          <img src={ktpPreview} alt="Preview KTP" className="mt-2 rounded-lg w-32 mx-auto shadow border" />
-        )}
-
-        <label className="block text-sm font-semibold mb-1">Upload Selfie dengan KTP</label>
-        <input
-          ref={selfieInputRef}
-          type="file"
-          accept="image/*"
-          className="file-input file-input-bordered w-full"
-          onChange={handleSelfieChange}
-          required
-        />
-        {selfiePreview && (
-          <img src={selfiePreview} alt="Preview Selfie KTP" className="mt-2 rounded-lg w-32 mx-auto shadow border" />
-        )}
-
-        <div className="flex items-center gap-2">
-          <input type="checkbox" required className="checkbox checkbox-sm" />
-          <span className="text-xs text-gray-600">
-            Saya setuju dengan <a href="#" className="text-blue-600 underline">Syarat & Ketentuan</a>
-          </span>
+        <div className="flex items-center w-full my-6">
+          <div className="flex-1 h-px bg-gray-200"></div>
+          <span className="mx-3 text-xs text-gray-400">atau daftar dengan</span>
+          <div className="flex-1 h-px bg-gray-200"></div>
         </div>
 
-        <button
-          type="submit"
-          className="w-full py-2 font-bold rounded-lg bg-gradient-to-r from-blue-500 to-green-400 text-white hover:scale-105 transition"
-          disabled={loading}
-        >
-          {loading ? "Loading..." : "Daftar & Verifikasi"}
-        </button>
-        {error && <div className="text-red-500 text-sm text-center">{error}</div>}
-        {success && <div className="text-green-500 text-sm text-center">{success}</div>}
-      </form>
-      <p className="text-xs text-gray-400 text-center mt-3">
-        Sudah punya akun?{" "}
-        <span className="text-blue-500 cursor-pointer" onClick={onClose}>
-          Masuk
-        </span>
-      </p>
+        <div className="flex flex-col gap-3 w-full">
+          <button
+            type="button"
+            className="flex items-center justify-center gap-3 border border-gray-300 rounded-lg py-3 hover:bg-gray-50 transition text-base"
+            onClick={() => signIn("google")}
+          >
+            <svg width="22" height="22" viewBox="0 0 48 48" fill="none">
+              <path fill="#4285F4" d="M44.5 20H24v8.5h11.7C34.7 33.9 29.9 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 6 .9 8.3 2.7l6.3-6.3C34.1 4.5 29.3 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21c10.5 0 20.1-7.7 20.1-21 0-1.4-.1-2.5-.3-3.5z"/>
+              <path fill="#34A853" d="M6.7 14.1l7 5.1C15.2 16.2 19.2 13 24 13c3.1 0 6 .9 8.3 2.7l6.3-6.3C34.1 4.5 29.3 3 24 3c-7.6 0-14 5.4-17.3 11.1z"/>
+              <path fill="#FBBC05" d="M24 44c5.9 0 10.7-1.9 14.2-5.2l-6.6-5.4C29.7 35.6 27 36.5 24 36.5c-5.8 0-10.7-3.9-12.4-9.2l-6.9 5.3C7.9 41 15.2 44 24 44z"/>
+              <path fill="#EA4335" d="M44.5 20H24v8.5h11.7C35.5 32.5 30.6 36.5 24 36.5c-5.8 0-10.7-3.9-12.4-9.2l-6.9 5.3C7.9 41 15.2 44 24 44z"/>
+            </svg>
+            Lanjutkan dengan Google
+          </button>
+        </div>
+
+        <p className="text-center text-sm mt-4">
+          Sudah punya akun? <a href="/masuk" className="text-blue-600 hover:underline">Masuk</a>
+        </p>
+      </div>
     </div>
   );
 }

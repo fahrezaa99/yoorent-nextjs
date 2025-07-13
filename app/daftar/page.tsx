@@ -1,25 +1,8 @@
 "use client";
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 
 const RegisterPage = () => {
-  const [ktpPreview, setKtpPreview] = useState<string | null>(null);
-  const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
-
-  const ktpInputRef = useRef<HTMLInputElement>(null);
-  const selfieInputRef = useRef<HTMLInputElement>(null);
-
-  const handleKtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setKtpPreview(URL.createObjectURL(file));
-    }
-  };
-  const handleSelfieChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelfiePreview(URL.createObjectURL(file));
-    }
-  };
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,13 +43,34 @@ const RegisterPage = () => {
         </div>
         <div>
           <label className="block text-sm font-semibold mb-1">Password</label>
-          <input
-            type="password"
-            className="input input-bordered w-full rounded-lg"
-            placeholder="Minimal 8 karakter"
-            minLength={8}
-            required
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              className="input input-bordered w-full rounded-lg pr-12"
+              placeholder="Minimal 8 karakter"
+              minLength={8}
+              required
+            />
+            <button
+              type="button"
+              tabIndex={-1}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600"
+              onClick={() => setShowPassword((show) => !show)}
+            >
+              {showPassword ? (
+                // Eye Off SVG
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-5 0-9-3.33-9-7.5a9.98 9.98 0 012.523-5.982M8.5 8.5a3 3 0 114.243 4.243M9.75 9.75a3 3 0 013.808 3.808M3 3l18 18" />
+                </svg>
+              ) : (
+                // Eye SVG
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.478 0-8.268-2.943-9.542-7z" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
         <div>
           <label className="block text-sm font-semibold mb-1">Nomor HP/Whatsapp</label>
@@ -77,43 +81,6 @@ const RegisterPage = () => {
             pattern="08[0-9]{8,12}"
             required
           />
-        </div>
-
-        {/* Upload KTP */}
-        <div>
-          <label className="block text-sm font-semibold mb-1">Upload Foto KTP</label>
-          <input
-            ref={ktpInputRef}
-            type="file"
-            accept="image/*"
-            className="file-input file-input-bordered w-full"
-            onChange={handleKtpChange}
-            required
-          />
-          {ktpPreview && (
-            <img src={ktpPreview} alt="Preview KTP" className="mt-2 rounded-lg w-40 mx-auto shadow border" />
-          )}
-        </div>
-
-        {/* Upload Selfie dengan KTP */}
-        <div>
-          <label className="block text-sm font-semibold mb-1">
-            Upload Selfie dengan KTP
-            <span className="text-xs text-gray-500 ml-1">
-              (Wajah & KTP harus terlihat jelas)
-            </span>
-          </label>
-          <input
-            ref={selfieInputRef}
-            type="file"
-            accept="image/*"
-            className="file-input file-input-bordered w-full"
-            onChange={handleSelfieChange}
-            required
-          />
-          {selfiePreview && (
-            <img src={selfiePreview} alt="Preview Selfie KTP" className="mt-2 rounded-lg w-40 mx-auto shadow border" />
-          )}
         </div>
 
         {/* Checkbox syarat */}
