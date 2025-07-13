@@ -46,12 +46,15 @@ export default function Navbar() {
 
   // ========== Auth & Animasi ==========
   useEffect(() => {
+    // Cek user pertama kali, TIDAK munculin animasi
     supabase.auth.getUser().then(({ data }) => setUser(data.user ?? null));
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    // Listener: animasi hanya saat login/logout beneran
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
-      // Tampilkan animasi setiap kali user login/logout
-      setShowAnim(true);
-      setTimeout(() => setShowAnim(false), 1500);
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+        setShowAnim(true);
+        setTimeout(() => setShowAnim(false), 1500);
+      }
     });
     return () => {
       listener?.subscription.unsubscribe();
