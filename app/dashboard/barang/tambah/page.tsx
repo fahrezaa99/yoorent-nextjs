@@ -75,8 +75,10 @@ export default function TambahBarangPage() {
       if (data && typeof data.path === "string") {
         publicPath = data.path;
       }
-      const { data: urlData } = supabase.storage.from("barang-foto").getPublicUrl(data?.path || fileName);
-fotoUrl = urlData?.publicUrl ?? "";
+      const { data: urlData } = supabase.storage
+        .from("barang-foto")
+        .getPublicUrl(publicPath);
+      fotoUrl = urlData?.publicUrl ?? "";
     }
 
     // 2. Insert ke table barang
