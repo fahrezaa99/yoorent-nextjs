@@ -50,23 +50,22 @@ export default function SewakanBarangPage() {
     const fotoFile = data.get("foto") as File;
 
     // Upload foto ke Supabase Storage
-    let fotoUrl = "";
-    if (fotoFile && fotoFile.size > 0) {
-      const fileExt = fotoFile.name.split(".").pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 5)}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage
-        .from("barang-foto")
-        .upload(fileName, fotoFile, { cacheControl: "3600", upsert: false });
-      if (uploadError) {
-        // Tampilkan error asli dari Supabase
-        setError(`Upload foto gagal: ${uploadError.message || uploadError.error_description || "Unknown error"}`);
-        setLoading(false);
-        return;
-      }
-      // Get public url
-      const { data: urlData } = supabase.storage.from("barang-foto").getPublicUrl(fileName);
-      fotoUrl = urlData.publicUrl;
-    }
+let fotoUrl = "";
+if (fotoFile && fotoFile.size > 0) {
+  const fileExt = fotoFile.name.split(".").pop();
+  const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 5)}.${fileExt}`;
+  const { error: uploadError } = await supabase.storage
+    .from("barang-foto")
+    .upload(fileName, fotoFile, { cacheControl: "3600", upsert: false });
+  if (uploadError) {
+    setError(`Upload foto gagal: ${uploadError.message || uploadError.error_description || "Unknown error"}`);
+    setLoading(false);
+    return;
+  }
+  // --- FIX: AMBIL publicUrl DENGAN BENAR ---
+  const { data: urlData } = supabase.storage.from("barang-foto").getPublicUrl(fileName);
+  fotoUrl = urlData?.publicUrl ?? "";
+}
 
     // Simpan ke tabel barang
     const { error: insertError } = await supabase.from("barang").insert([
