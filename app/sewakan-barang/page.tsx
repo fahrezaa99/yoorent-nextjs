@@ -58,10 +58,10 @@ export default function SewakanBarangPage() {
         .from("barang-foto")
         .upload(fileName, fotoFile, { cacheControl: "3600", upsert: false });
       if (uploadError) {
-        setError(`Upload foto gagal: ${uploadError.message || uploadError.error_description || "Unknown error"}`);
-        setLoading(false);
-        return;
-      }
+  setError(`Upload foto gagal: ${uploadError.message || uploadError.toString() || "Unknown error"}`);
+  setLoading(false);
+  return;
+}
       // Ambil publicUrl dengan benar
       const { data: urlData } = supabase.storage
         .from("barang-foto")
