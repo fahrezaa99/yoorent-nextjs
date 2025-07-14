@@ -50,22 +50,24 @@ export default function SewakanBarangPage() {
     const fotoFile = data.get("foto") as File;
 
     // Upload foto ke Supabase Storage
-let fotoUrl = "";
-if (fotoFile && fotoFile.size > 0) {
-  const fileExt = fotoFile.name.split(".").pop();
-  const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 5)}.${fileExt}`;
-  const { error: uploadError } = await supabase.storage
-    .from("barang-foto")
-    .upload(fileName, fotoFile, { cacheControl: "3600", upsert: false });
-  if (uploadError) {
-    setError(`Upload foto gagal: ${uploadError.message || uploadError.error_description || "Unknown error"}`);
-    setLoading(false);
-    return;
-  }
-  // --- FIX: AMBIL publicUrl DENGAN BENAR ---
-  const { data: urlData } = supabase.storage.from("barang-foto").getPublicUrl(fileName);
-  fotoUrl = urlData?.publicUrl ?? "";
-}
+    let fotoUrl = "";
+    if (fotoFile && fotoFile.size > 0) {
+      const fileExt = fotoFile.name.split(".").pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 5)}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from("barang-foto")
+        .upload(fileName, fotoFile, { cacheControl: "3600", upsert: false });
+      if (uploadError) {
+        setError(`Upload foto gagal: ${uploadError.message || uploadError.error_description || "Unknown error"}`);
+        setLoading(false);
+        return;
+      }
+      // Ambil publicUrl dengan benar
+      const { data: urlData } = supabase.storage
+        .from("barang-foto")
+        .getPublicUrl(fileName);
+      fotoUrl = urlData?.publicUrl ?? "";
+    }
 
     // Simpan ke tabel barang
     const { error: insertError } = await supabase.from("barang").insert([
@@ -91,7 +93,7 @@ if (fotoFile && fotoFile.size > 0) {
 
     setSent(true);
     setLoading(false);
-    if (form) form.reset();
+    form.reset();
     setPreview(null);
   }
 
@@ -110,27 +112,83 @@ if (fotoFile && fotoFile.size > 0) {
         ) : (
           <form className="space-y-4" onSubmit={handleSubmit}>
             {error && <div className="text-red-600 font-bold text-center">{error}</div>}
-            <input name="nama" required placeholder="Nama Barang (misal: Kamera Canon 80D)" className="w-full border rounded-lg px-4 py-3 border-blue-200 focus:border-blue-500 outline-none" />
+            <input
+              name="nama"
+              required
+              placeholder="Nama Barang (misal: Kamera Canon 80D)"
+              className="w-full border rounded-lg px-4 py-3 border-blue-200 focus:border-blue-500 outline-none"
+            />
 
-            <select name="kategori" required className="w-full border rounded-lg px-4 py-3 border-blue-200 focus:border-blue-500 outline-none text-gray-700" defaultValue="">
-              <option value="" disabled>Pilih Kategori</option>
-              {categories.map(cat => (<option key={cat} value={cat}>{cat}</option>))}
+            <select
+              name="kategori"
+              required
+              className="w-full border rounded-lg px-4 py-3 border-blue-200 focus:border-blue-500 outline-none text-gray-700"
+              defaultValue=""
+            >
+              <option value="" disabled>
+                Pilih Kategori
+              </option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
             </select>
 
-            <input name="lokasi" required placeholder="Lokasi (Kota)" className="w-full border rounded-lg px-4 py-3 border-blue-200 focus:border-blue-500 outline-none" />
+            <input
+              name="lokasi"
+              required
+              placeholder="Lokasi (Kota)"
+              className="w-full border rounded-lg px-4 py-3 border-blue-200 focus:border-blue-500 outline-none"
+            />
 
-            <textarea name="alamat" placeholder="Alamat lengkap lokasi barang (opsional: share link Google Maps)" className="w-full border rounded-lg px-4 py-3 border-blue-200 focus:border-blue-500 outline-none resize-none" rows={2} />
+            <textarea
+              name="alamat"
+              placeholder="Alamat lengkap lokasi barang (opsional: share link Google Maps)"
+              className="w-full border rounded-lg px-4 py-3 border-blue-200 focus:border-blue-500 outline-none resize-none"
+              rows={2}
+            />
 
             <div className="flex gap-2">
-              <input name="harga" type="number" required placeholder="Harga Sewa/hari (Rp)" className="w-full border rounded-lg px-4 py-3 border-blue-200 focus:border-blue-500 outline-none" min={0} />
-              <input name="deposit" type="number" placeholder="Deposit/Jaminan (optional)" className="w-full border rounded-lg px-4 py-3 border-blue-200 focus:border-blue-500 outline-none" min={0} />
+              <input
+                name="harga"
+                type="number"
+                required
+                placeholder="Harga Sewa/hari (Rp)"
+                className="w-full border rounded-lg px-4 py-3 border-blue-200 focus:border-blue-500 outline-none"
+                min={0}
+              />
+              <input
+                name="deposit"
+                type="number"
+                placeholder="Deposit/Jaminan (optional)"
+                className="w-full border rounded-lg px-4 py-3 border-blue-200 focus:border-blue-500 outline-none"
+                min={0}
+              />
             </div>
 
-            <textarea name="deskripsi" required placeholder="Deskripsi barang (misal: lensa 18-55mm, baterai, charger, kondisi 99%)" className="w-full border rounded-lg px-4 py-3 border-blue-200 focus:border-blue-500 outline-none resize-none" rows={3} />
+            <textarea
+              name="deskripsi"
+              required
+              placeholder="Deskripsi barang (misal: lensa 18-55mm, baterai, charger, kondisi 99%)"
+              className="w-full border rounded-lg px-4 py-3 border-blue-200 focus:border-blue-500 outline-none resize-none"
+              rows={3}
+            />
 
-            <select name="kondisi" required className="w-full border rounded-lg px-4 py-3 border-blue-200 focus:border-blue-500 outline-none text-gray-700" defaultValue="">
-              <option value="" disabled>Pilih Kondisi Barang</option>
-              {conditions.map(cond => (<option key={cond} value={cond}>{cond}</option>))}
+            <select
+              name="kondisi"
+              required
+              className="w-full border rounded-lg px-4 py-3 border-blue-200 focus:border-blue-500 outline-none text-gray-700"
+              defaultValue=""
+            >
+              <option value="" disabled>
+                Pilih Kondisi Barang
+              </option>
+              {conditions.map((cond) => (
+                <option key={cond} value={cond}>
+                  {cond}
+                </option>
+              ))}
             </select>
 
             {/* Upload foto */}
@@ -141,7 +199,7 @@ if (fotoFile && fotoFile.size > 0) {
               accept="image/*"
               ref={fotoRef}
               className="w-full"
-              onChange={e => {
+              onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) setPreview(URL.createObjectURL(file));
                 else setPreview(null);
@@ -149,18 +207,39 @@ if (fotoFile && fotoFile.size > 0) {
             />
             {preview && (
               <div className="my-2 flex justify-center">
-                <img src={preview} alt="Preview" className="h-24 rounded-lg object-cover" />
+                <img
+                  src={preview}
+                  alt="Preview"
+                  className="h-24 rounded-lg object-cover"
+                />
               </div>
             )}
 
-            <input name="whatsapp" required placeholder="Nomor Whatsapp/Telepon (privasi terjaga, contoh: 0812xxxx)" className="w-full border rounded-lg px-4 py-3 border-blue-200 focus:border-blue-500 outline-none" />
+            <input
+              name="whatsapp"
+              required
+              placeholder="Nomor Whatsapp/Telepon (privasi terjaga, contoh: 0812xxxx)"
+              className="w-full border rounded-lg px-4 py-3 border-blue-200 focus:border-blue-500 outline-none"
+            />
 
-            <input name="catatan" placeholder="Aturan sewa/catatan tambahan (opsional)" className="w-full border rounded-lg px-4 py-3 border-blue-200 focus:border-blue-500 outline-none" />
+            <input
+              name="catatan"
+              placeholder="Aturan sewa/catatan tambahan (opsional)"
+              className="w-full border rounded-lg px-4 py-3 border-blue-200 focus:border-blue-500 outline-none"
+            />
 
             <div className="flex items-center gap-2">
-              <input required type="checkbox" id="tos" className="accent-blue-600" />
+              <input
+                required
+                type="checkbox"
+                id="tos"
+                className="accent-blue-600"
+              />
               <label htmlFor="tos" className="text-sm text-gray-700">
-                Saya setuju dengan <a href="#" className="underline text-blue-600">Syarat & Ketentuan</a>
+                Saya setuju dengan{" "}
+                <a href="#" className="underline text-blue-600">
+                  Syarat & Ketentuan
+                </a>
               </label>
             </div>
 
