@@ -57,24 +57,29 @@ export default function TambahBarangPage() {
     setLoading(true);
 
     // 1. Upload foto ke storage Supabase
-let fotoUrl = "";
-if (foto) {
-  const fileName = `foto-${Date.now()}-${foto.name}`;
-  const { data, error } = await supabase.storage
-    .from("barang-foto")
-    .upload(fileName, foto);
-  if (error) {
-    setToast("Gagal upload foto");
-    setLoading(false);
-    return;
-  }
-  // FIX: PASTIKAN PAKAI data.path
-  const { data: urlData } = supabase.storage
-    .from("barang-foto")
-    .getPublicUrl(data?.path || fileName);
-  fotoUrl = urlData?.publicUrl ?? "";
-}
+    let fotoUrl = "";
+    if (foto) {
+      const fileName = `foto-${Date.now()}-${foto.name}`;
+      const { data, error } = await supabase.storage
+        .from("barang-foto")
+        .upload(fileName, foto);
 
+      if (error) {
+        setToast("Gagal upload foto");
+        setLoading(false);
+        return;
+      }
+
+      // Ambil publicUrl DENGAN CARA BENAR!
+      let publicPath = fileName;
+      if (data && typeof data.path === "string") {
+        publicPath = data.path;
+      }
+      const { data: urlData } = supabase.storage
+        .from("barang-foto")
+        .getPublicUrl(publicPath);
+      fotoUrl = urlData?.publicUrl ?? "";
+    }
 
     // 2. Insert ke table barang
     const userId = (await supabase.auth.getUser()).data.user?.id;
@@ -111,7 +116,6 @@ if (foto) {
         <h2 className="font-extrabold text-2xl mb-2 text-blue-700">
           Tambah Barang Sewa
         </h2>
-        {/* -- Isi form input sesuai kode kamu sebelumnya -- */}
         <div className="space-y-3">
           <input
             type="text"
