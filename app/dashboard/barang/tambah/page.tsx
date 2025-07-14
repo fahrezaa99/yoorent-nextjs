@@ -70,11 +70,14 @@ export default function TambahBarangPage() {
         return;
       }
 
-      // Ambil publicUrl dengan cara yang benar
-      // data.path berisi path file di storage
+      // Ambil publicUrl dengan cara yang benar & aman!
+      let publicPath = fileName;
+      if (data && typeof data.path === "string") {
+        publicPath = data.path;
+      }
       const { data: urlData } = supabase.storage
         .from("barang-foto")
-        .getPublicUrl(data.path);
+        .getPublicUrl(publicPath);
       fotoUrl = urlData?.publicUrl ?? "";
     }
 
