@@ -6,8 +6,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import LoginModal from "./LoginModal";
 import RegisterModal from "./RegisterModal";
 import { supabase } from "@/lib/supabaseClient";
+import YooRentLogo from "./YooRentLogo";
 
-function Modal({ open, onClose, children }: { open: boolean; onClose: () => void; children: React.ReactNode }) {
+function Modal({
+  open,
+  onClose,
+  children,
+}: {
+  open: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
   if (!open) return null;
   return (
     <div
@@ -42,21 +51,29 @@ export default function Navbar() {
   const [showAnim, setShowAnim] = useState(false);
   const [user, setUser] = useState<any>(null);
 
-  // ========== Auth & Animasi ==========
+  // Sticky & shadow on scroll
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user ?? null));
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
-        setShowAnim(true);
-        setTimeout(() => setShowAnim(false), 1500);
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user ?? null);
+        if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+          setShowAnim(true);
+          setTimeout(() => setShowAnim(false), 1500);
+        }
       }
-    });
+    );
     return () => {
       listener?.subscription.unsubscribe();
     };
   }, []);
-  // ========== End Auth ==========
 
   useEffect(() => {
     const handleResize = () => {
@@ -69,30 +86,27 @@ export default function Navbar() {
   const handleScroll = (id: string) => (e: any) => {
     e.preventDefault();
     const el = document.getElementById(id);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth" });
-    }
+    if (el) el.scrollIntoView({ behavior: "smooth" });
     setMobileOpen(false);
   };
-
   const handleScrollToTop = (e: any) => {
     e.preventDefault();
     window.scrollTo({ top: 0, behavior: "smooth" });
     setMobileOpen(false);
   };
 
-  // ==== Komponen User Info & Dashboard ====
+  // User info desktop only
   const UserInfo = () => (
-    <div className="flex items-center gap-2 ml-3">
+    <div className="hidden md:flex items-center gap-2 ml-3">
       <Link
         href="/dashboard"
-        className="flex items-center px-2 py-1 rounded-lg font-semibold text-green-400 bg-gray-900 hover:bg-gray-800 transition"
+        className="flex items-center px-3 py-1 rounded-lg font-semibold text-[#001F3F] bg-white hover:bg-gray-100 transition"
         title="Dashboard"
       >
         <LayoutDashboard className="w-5 h-5 mr-1" />
         Dashboard
       </Link>
-      <span className="font-semibold text-xs text-green-400 max-w-[110px] truncate hidden md:inline">
+      <span className="font-semibold text-xs text-white max-w-[110px] truncate hidden lg:inline">
         {user?.email}
       </span>
       <button
@@ -109,11 +123,13 @@ export default function Navbar() {
       </button>
     </div>
   );
-  // ==== End User Info ====
+
+  // Responsive logo size
+  const logoSize = typeof window !== "undefined" && window.innerWidth < 768 ? 44 : 70;
 
   return (
     <>
-      {/* === ANIMASI TRANSISI LOGIN/LOGOUT === */}
+      {/* ===== Animasi Login/Logout ===== */}
       <AnimatePresence>
         {showAnim && (
           <motion.div
@@ -121,37 +137,38 @@ export default function Navbar() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -80, opacity: 0 }}
             transition={{ duration: 0.5 }}
-            className="fixed top-6 left-1/2 z-[100] -translate-x-1/2 bg-gradient-to-r from-green-400 via-blue-500 to-purple-500 text-white px-8 py-3 rounded-xl shadow-xl text-lg font-bold tracking-wide"
+            className="fixed top-6 left-1/2 z-[100] -translate-x-1/2
+                       bg-gradient-to-r from-green-400 via-blue-500 to-purple-500
+                       text-white px-8 py-3 rounded-xl shadow-xl text-lg font-bold tracking-wide"
           >
-            {user ? "Login Berhasil! Selamat datang di YooRent" : "Logout Berhasil!"}
+            {user
+              ? "Login Berhasil! Selamat datang di YooRent"
+              : "Logout Berhasil!"}
           </motion.div>
         )}
       </AnimatePresence>
 
+      {/* ===== Navbar ===== */}
       <motion.nav
         initial={{ y: -25, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.4 }}
-        className="bg-[#181F2A] w-full shadow-sm fixed top-0 left-0 z-50"
+        className={`bg-[#001F3F] w-full fixed top-0 left-0 z-50 transition-shadow duration-300 ${scrolled ? "shadow-lg" : "shadow-none"}`}
       >
-        <div className="max-w-6xl mx-auto px-4 flex items-center justify-between h-16">
-          {/* LOGO + TITLE */}
-          <div className="flex flex-col items-start">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-gradient-to-br from-blue-500 via-green-400 to-purple-500">
-                <span className="text-white font-bold text-2xl">Y</span>
-              </div>
-              <span className="font-extrabold text-2xl text-white">
-                YooRent
-              </span>
-            </div>
-            <span className="text-xs text-gray-300 mt-1 ml-1">
-              Platform Sewa Terpercaya
+        <div className="max-w-6xl mx-auto px-2 md:px-4 flex items-center justify-between h-14 md:h-16">
+          {/* Logo */}
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="block md:hidden">
+              <YooRentLogo size={44} />
+            </span>
+            <span className="hidden md:block">
+              <YooRentLogo size={70} />
             </span>
           </div>
-          {/* Desktop MENU */}
+
+          {/* Desktop Menu */}
           <div className="flex-1 justify-center hidden md:flex">
-            <ul className="flex gap-8 text-white font-medium">
+            <ul className="flex gap-6 lg:gap-8 text-white font-medium">
               <li>
                 <a
                   href="/"
@@ -162,10 +179,7 @@ export default function Navbar() {
                 </a>
               </li>
               <li>
-                <Link
-                  href="/kategori"
-                  className="hover:text-green-400 transition"
-                >
+                <Link href="/kategori" className="hover:text-green-400 transition">
                   Kategori
                 </Link>
               </li>
@@ -189,22 +203,24 @@ export default function Navbar() {
               </li>
             </ul>
           </div>
-          {/* KANAN */}
+
+          {/* Right Side */}
           <div className="flex items-center gap-2">
-            {/* User Info */}
             {user ? (
               <UserInfo />
             ) : (
               <>
                 <button
                   onClick={() => setOpenLogin(true)}
-                  className="px-4 py-2 rounded-lg font-medium text-black bg-white border border-gray-300 hover:bg-gray-200 transition hidden md:inline-block"
+                  className="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-black bg-white border border-gray-300 hover:bg-gray-200 transition hidden md:inline-block"
                 >
                   Masuk
                 </button>
                 <button
                   onClick={() => setOpenRegister(true)}
-                  className="px-4 py-2 rounded-lg font-semibold text-white bg-gradient-to-r from-blue-600 via-green-400 to-purple-500 shadow hover:opacity-90 transition hidden md:inline-block"
+                  className="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-semibold text-white
+                             bg-gradient-to-r from-blue-600 via-green-400 to-purple-500
+                             shadow hover:opacity-90 transition hidden md:inline-block"
                 >
                   Daftar Gratis
                 </button>
@@ -220,7 +236,8 @@ export default function Navbar() {
             </button>
           </div>
         </div>
-        {/* MOBILE DRAWER */}
+
+        {/* Mobile Drawer */}
         <AnimatePresence>
           {mobileOpen && (
             <motion.div
@@ -232,43 +249,22 @@ export default function Navbar() {
               onClick={() => setMobileOpen(false)}
             >
               <div
-                className="absolute top-0 right-0 w-4/5 max-w-xs h-full bg-black shadow-2xl flex flex-col px-6 py-5 gap-6"
+                className="absolute top-0 right-0 w-4/5 max-w-xs h-full
+                  bg-[#11213a] shadow-2xl flex flex-col px-6 py-5 gap-6"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-gradient-to-br from-blue-500 via-green-400 to-purple-500">
-                      <span className="text-white font-bold text-xl">Y</span>
-                    </div>
-                    <span className="font-extrabold text-xl text-white">
-                      YooRent
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => setMobileOpen(false)}
-                    className="p-1 rounded-full hover:bg-gray-800 transition"
-                    aria-label="Tutup menu"
-                  >
-                    <X className="w-7 h-7 text-white" />
-                  </button>
-                </div>
-                {/* Semua menu pakai Link */}
-                <ul className="flex flex-col gap-4 font-semibold text-lg text-white">
+                <ul className="flex flex-col gap-4 mt-6 text-white text-lg font-semibold">
                   <li>
                     <a
                       href="/"
                       onClick={handleScrollToTop}
-                      className="hover:text-green-400 transition cursor-pointer"
+                      className="hover:text-green-400 transition"
                     >
                       Beranda
                     </a>
                   </li>
                   <li>
-                    <Link
-                      href="/kategori"
-                      className="hover:text-green-400 transition"
-                      onClick={() => setMobileOpen(false)}
-                    >
+                    <Link href="/kategori" className="hover:text-green-400 transition">
                       Kategori
                     </Link>
                   </li>
@@ -276,7 +272,7 @@ export default function Navbar() {
                     <a
                       href="#carakerja"
                       onClick={handleScroll("carakerja")}
-                      className="hover:text-green-400 transition cursor-pointer"
+                      className="hover:text-green-400 transition"
                     >
                       Cara Kerja
                     </a>
@@ -285,58 +281,49 @@ export default function Navbar() {
                     <a
                       href="#testimoni"
                       onClick={handleScroll("testimoni")}
-                      className="hover:text-green-400 transition cursor-pointer"
+                      className="hover:text-green-400 transition"
                     >
                       Testimoni
                     </a>
                   </li>
                 </ul>
-                {/* User Info Mobile */}
-                <div className="flex flex-col gap-2 pt-4 border-t border-gray-700">
+                <div className="mt-8 flex flex-col gap-3">
                   {user ? (
-                    <div className="flex items-center gap-2">
+                    <>
                       <Link
                         href="/dashboard"
-                        className="flex items-center px-2 py-1 rounded-lg font-semibold text-green-400 bg-gray-900 hover:bg-gray-800 transition"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold text-[#001F3F] bg-white border border-gray-300 hover:bg-gray-100 transition"
                         title="Dashboard"
                       >
-                        <LayoutDashboard className="w-5 h-5 mr-1" />
+                        <LayoutDashboard className="w-5 h-5" />
                         Dashboard
                       </Link>
-                      <span className="font-semibold text-sm text-green-400 max-w-[110px] truncate">
-                        {user?.email}
-                      </span>
                       <button
-                        className="ml-2 px-3 py-1 rounded-xl bg-red-500 text-white text-xs hover:bg-red-600"
                         onClick={async () => {
                           await supabase.auth.signOut();
                           setUser(null);
-                          setMobileOpen(false);
                           setShowAnim(true);
                           setTimeout(() => setShowAnim(false), 1500);
                           window.location.reload();
                         }}
+                        className="w-full px-4 py-2 rounded-lg font-semibold text-white bg-red-500 hover:bg-red-600 transition"
                       >
                         Logout
                       </button>
-                    </div>
+                    </>
                   ) : (
                     <>
                       <button
-                        onClick={() => {
-                          setOpenLogin(true);
-                          setMobileOpen(false);
-                        }}
-                        className="px-4 py-2 rounded-lg font-medium text-black bg-white border border-gray-300 hover:bg-gray-200 transition text-center"
+                        onClick={() => setOpenLogin(true)}
+                        className="w-full px-4 py-2 rounded-lg font-medium text-black bg-white border border-gray-300 hover:bg-gray-200 transition"
                       >
                         Masuk
                       </button>
                       <button
-                        onClick={() => {
-                          setOpenRegister(true);
-                          setMobileOpen(false);
-                        }}
-                        className="px-4 py-2 rounded-lg font-semibold text-white bg-gradient-to-r from-blue-600 via-green-400 to-purple-500 shadow hover:opacity-90 transition text-center"
+                        onClick={() => setOpenRegister(true)}
+                        className="w-full px-4 py-2 rounded-lg font-semibold text-white
+                          bg-gradient-to-r from-blue-600 via-green-400 to-purple-500
+                          shadow hover:opacity-90 transition"
                       >
                         Daftar Gratis
                       </button>
@@ -349,20 +336,19 @@ export default function Navbar() {
         </AnimatePresence>
       </motion.nav>
 
-      {/* === LOGIN MODAL === */}
+      {/* Login & Register Modals */}
       <AnimatePresence>
         {openLogin && (
           <Modal open={openLogin} onClose={() => setOpenLogin(false)}>
             <LoginModal open={openLogin} onClose={() => setOpenLogin(false)} />
           </Modal>
         )}
-      </AnimatePresence>
-
-      {/* === REGISTER MODAL === */}
-      <AnimatePresence>
         {openRegister && (
           <Modal open={openRegister} onClose={() => setOpenRegister(false)}>
-            <RegisterModal open={openRegister} onClose={() => setOpenRegister(false)} />
+            <RegisterModal
+              open={openRegister}
+              onClose={() => setOpenRegister(false)}
+            />
           </Modal>
         )}
       </AnimatePresence>
