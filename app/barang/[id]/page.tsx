@@ -10,7 +10,7 @@ type Barang = {
   id: string;
   nama: string;
   harga: number;
-  foto: string[];      // Array string URL foto
+  foto: string[];
   lokasi: string;
   alamat?: string;
   kategori?: string;
@@ -57,7 +57,7 @@ export default function ItemDetailPage() {
     );
   }
 
-  // Ambil foto (array)
+  // Foto barang
   const fotos: string[] = Array.isArray(item.foto) ? item.foto : [];
   const fotoUrl = fotos[0]?.startsWith("http")
     ? fotos[0]
@@ -65,10 +65,15 @@ export default function ItemDetailPage() {
     ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/barang-foto/${fotos[0]}`
     : "/placeholder.png";
 
+  // ====== Perbaikan Tombol WhatsApp ======
+  const whatsappUrl = item.whatsapp
+    ? `https://wa.me/${item.whatsapp.replace(/^0/, "62")}`
+    : null;
+
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow p-8">
-        {/* Gambar pakai Next.js Image agar linting aman */}
+        {/* Gambar utama */}
         <div className="w-full h-72 bg-gray-100 rounded-xl mb-6 relative overflow-hidden">
           <Image
             src={fotoUrl}
@@ -102,10 +107,21 @@ export default function ItemDetailPage() {
         {item.catatan && (
           <div className="text-sm text-gray-500 mb-4">{item.catatan}</div>
         )}
-        {item.whatsapp && (
+        {/* ====== Button WhatsApp, Sudah Aman ====== */}
+        {whatsappUrl ? (
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition shadow"
+          >
+            Booking via WhatsApp
+          </a>
+        ) : (
           <button
-            className="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition shadow"
-            onClick={() => window.open(`https://wa.me/${item.whatsapp.replace(/^0/, "62")}`)}
+            disabled
+            className="bg-gray-200 text-gray-400 px-6 py-3 rounded-xl font-semibold cursor-not-allowed"
+            title="Nomor WhatsApp tidak tersedia"
           >
             Booking via WhatsApp
           </button>
