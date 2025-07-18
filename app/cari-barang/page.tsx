@@ -10,14 +10,7 @@ import Image from "next/image";
 
 const categories = ["Semua", "Kamera", "Drone", "Laptop", "Camping", "Motor"];
 const locations = [
-  "Semua",
-  "Jakarta",
-  "Bandung",
-  "Bogor",
-  "Surabaya",
-  "Bali",
-  "Palembang",
-  "Batam",
+  "Semua", "Jakarta", "Bandung", "Bogor", "Surabaya", "Bali", "Palembang", "Batam",
 ];
 const hargaRanges = [
   { label: "Semua", min: 0, max: Infinity },
@@ -33,7 +26,7 @@ function formatRupiah(num: number) {
 interface Product {
   id: string;
   nama: string;
-  foto: string[]; // array url/foto
+  foto: string[];
   harga: number;
   kategori?: string;
   lokasi?: string;
@@ -43,7 +36,7 @@ interface Product {
   pemilik_foto?: string;
   user_id?: string;
   whatsapp?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export default function CariBarangPage() {
@@ -66,14 +59,12 @@ export default function CariBarangPage() {
   const [chatBarang, setChatBarang] = useState<Product | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Ambil user login (supabase)
   useEffect(() => {
     supabase.auth.getUser().then((res) => {
       setUserId(res.data.user?.id ?? null);
     });
   }, []);
 
-  // Fetch data
   useEffect(() => {
     async function fetchBarang() {
       setLoading(true);
@@ -87,7 +78,6 @@ export default function CariBarangPage() {
     fetchBarang();
   }, []);
 
-  // Filtering
   const filtered = products.filter((p) =>
     (selectedCategory === "Semua" || p.kategori === selectedCategory) &&
     (selectedLocation === "Semua" || p.lokasi === selectedLocation) &&
@@ -307,14 +297,24 @@ export default function CariBarangPage() {
                         >
                           Chat
                         </button>
-                        <a
-                          href={`https://wa.me/${product.whatsapp?.replace(/^0/, "62")}`}
-                          target="_blank"
-                          rel="noopener"
-                          className="flex-shrink-0 px-4 py-2 border border-green-500 text-green-600 rounded-lg text-sm hover:bg-green-50"
-                        >
-                          WhatsApp
-                        </a>
+                        {product.whatsapp ? (
+                          <a
+                            href={`https://wa.me/${product.whatsapp.replace(/^0/, "62")}`}
+                            target="_blank"
+                            rel="noopener"
+                            className="flex-shrink-0 px-4 py-2 border border-green-500 text-green-600 rounded-lg text-sm hover:bg-green-50"
+                          >
+                            WhatsApp
+                          </a>
+                        ) : (
+                          <button
+                            className="flex-shrink-0 px-4 py-2 border border-gray-300 text-gray-400 rounded-lg text-sm cursor-not-allowed"
+                            disabled
+                            title="Nomor WhatsApp tidak tersedia"
+                          >
+                            WhatsApp
+                          </button>
+                        )}
                       </div>
                       <button
                         onClick={() => handleSewaClick(product)}

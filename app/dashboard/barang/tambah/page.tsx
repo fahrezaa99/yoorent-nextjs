@@ -5,7 +5,6 @@ import { supabase } from "@/lib/supabaseClient";
 import { Loader2, UploadCloud } from "lucide-react";
 import Image from "next/image";
 
-// Tipe untuk form dan file
 interface FormBarang {
   nama: string;
   kategori: string;
@@ -34,11 +33,11 @@ export default function TambahBarangPage() {
   });
   const [foto, setFoto] = useState<File | null>(null);
   const [fotoPreview, setFotoPreview] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
-  const [toast, setToast] = useState<string>("");
+  const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState("");
   const router = useRouter();
 
-  const isFormValid = (): boolean =>
+  const isFormValid = () =>
     !!form.nama &&
     !!form.kategori &&
     !!form.lokasi &&
