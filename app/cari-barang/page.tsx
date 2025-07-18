@@ -341,7 +341,7 @@ export default function CariBarangPage() {
         </div>
       </div>
 
-      {/* Chat Modal */}
+            {/* Chat Modal */}
       {chatOpen && chatBarang && userId && chatBarang.user_id && (
         <ChatModal
           open={chatOpen}
@@ -358,9 +358,13 @@ export default function CariBarangPage() {
         <BookingPopup
           open={openBooking}
           onClose={() => setOpenBooking(false)}
-          barang={selectedProduct}
+          barang={{
+            ...selectedProduct,
+            lokasi: selectedProduct.lokasi ?? "-", // <<--- PENTING!
+          }}
         />
       )}
     </main>
   );
 }
+
