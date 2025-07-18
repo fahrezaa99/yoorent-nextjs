@@ -1,7 +1,12 @@
-// next.config.js
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // ... config lain
-}
-module.exports = nextConfig
+  images: {
+    domains: [
+      // ganti dengan Project ID-mu persis
+      "mqliwikxxktkvwtvwrks.supabase.co",
+    ],
+  },
+};
+
+module.exports = nextConfig;

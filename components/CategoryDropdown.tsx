@@ -1,6 +1,6 @@
 "use client";
 import { Listbox, Transition } from "@headlessui/react";
-import { Fragment, useState } from "react";
+import { Fragment, useState, useEffect } from "react";
 
 const categories = [
   "Semua Kategori",
@@ -15,20 +15,45 @@ const categories = [
   "Lainnya",
 ];
 
-export default function CategoryDropdown({ value, onChange }: { value?: string; onChange?: (value: string) => void }) {
+export default function CategoryDropdown({
+  value,
+  onChange,
+}: {
+  value?: string;
+  onChange?: (value: string) => void;
+}) {
   const [selected, setSelected] = useState(value || categories[0]);
 
   // Sync with parent state if controlled
+  useEffect(() => {
+    if (value) setSelected(value);
+  }, [value]);
+
   const handleChange = (val: string) => {
     setSelected(val);
     onChange?.(val);
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg">
       <Listbox value={selected} onChange={handleChange}>
         <div className="relative">
-          <Listbox.Button className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400 transition">
+          <Listbox.Button
+            className="
+              w-full
+              min-w-[180px]
+              max-w-full
+              rounded-xl
+              border border-gray-200
+              bg-white
+              px-4 py-2
+              text-left
+              cursor-pointer
+              focus:outline-none focus:ring-2 focus:ring-blue-400
+              transition
+              truncate
+              "
+          >
             {selected}
           </Listbox.Button>
           <Transition
@@ -37,18 +62,36 @@ export default function CategoryDropdown({ value, onChange }: { value?: string; 
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <Listbox.Options className="absolute mt-2 w-full rounded-xl bg-white shadow-lg z-20 overflow-auto max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none">
+            <Listbox.Options
+              className="
+                absolute
+                mt-2
+                w-full
+                min-w-[180px]
+                max-w-[90vw]
+                rounded-xl
+                bg-white
+                shadow-lg
+                z-20
+                overflow-auto
+                max-h-60
+                ring-1 ring-black ring-opacity-5
+                focus:outline-none
+              "
+            >
               {categories.map((category) => (
                 <Listbox.Option
                   key={category}
                   value={category}
                   className={({ active }) =>
                     `cursor-pointer select-none px-4 py-2 ${
-                      active ? "bg-blue-100 text-blue-800" : "text-gray-800"
+                      active
+                        ? "bg-blue-100 text-blue-800"
+                        : "text-gray-800"
                     }`
                   }
                 >
-                  {category}
+                  <span className="block truncate">{category}</span>
                 </Listbox.Option>
               ))}
             </Listbox.Options>

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Menu, X, LayoutDashboard } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,48 +8,15 @@ import RegisterModal from "./RegisterModal";
 import { supabase } from "@/lib/supabaseClient";
 import YooRentLogo from "./YooRentLogo";
 
-function Modal({
-  open,
-  onClose,
-  children,
-}: {
-  open: boolean;
-  onClose: () => void;
-  children: React.ReactNode;
-}) {
-  if (!open) return null;
-  return (
-    <div
-      className="fixed inset-0 bg-black/40 z-[99] flex items-center justify-center"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.92, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.92, opacity: 0 }}
-        transition={{ duration: 0.2 }}
-        className="bg-white rounded-2xl shadow-xl max-w-xs w-full p-7 relative"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          className="absolute right-4 top-4 text-gray-500 hover:text-blue-600"
-          onClick={onClose}
-          aria-label="Tutup modal"
-        >
-          <X className="w-6 h-6" />
-        </button>
-        {children}
-      </motion.div>
-    </div>
-  );
-}
-
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openLogin, setOpenLogin] = useState(false);
   const [openRegister, setOpenRegister] = useState(false);
-  const [showAnim, setShowAnim] = useState(false);
   const [user, setUser] = useState<any>(null);
+
+  // Untuk user dropdown
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   // Sticky & shadow on scroll
   const [scrolled, setScrolled] = useState(false);
@@ -62,13 +29,7 @@ export default function Navbar() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user ?? null));
     const { data: listener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user ?? null);
-        if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
-          setShowAnim(true);
-          setTimeout(() => setShowAnim(false), 1500);
-        }
-      }
+      (event, session) => setUser(session?.user ?? null)
     );
     return () => {
       listener?.subscription.unsubscribe();
@@ -83,6 +44,21 @@ export default function Navbar() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Close dropdown menu kalau klik di luar
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    }
+    if (showMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showMenu]);
+
   const handleScroll = (id: string) => (e: any) => {
     e.preventDefault();
     const el = document.getElementById(id);
@@ -95,65 +71,109 @@ export default function Navbar() {
     setMobileOpen(false);
   };
 
-  // User info desktop only
-  const UserInfo = () => (
-    <div className="hidden md:flex items-center gap-2 ml-3">
-      <Link
-        href="/dashboard"
-        className="flex items-center px-3 py-1 rounded-lg font-semibold text-[#001F3F] bg-white hover:bg-gray-100 transition"
-        title="Dashboard"
+  // Responsive logo size
+  const logoSize =
+    typeof window !== "undefined" && window.innerWidth < 768 ? 44 : 70;
+
+  function Modal({ open, onClose, children }: any) {
+    if (!open) return null;
+    return (
+      <div
+        className="fixed inset-0 bg-black/40 z-[99] flex items-center justify-center"
+        onClick={onClose}
       >
-        <LayoutDashboard className="w-5 h-5 mr-1" />
-        Dashboard
-      </Link>
-      <span className="font-semibold text-xs text-white max-w-[110px] truncate hidden lg:inline">
-        {user?.email}
-      </span>
+        <motion.div
+          initial={{ scale: 0.92, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.92, opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="bg-white rounded-2xl shadow-xl max-w-xs w-full p-7 relative"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            className="absolute right-4 top-4 text-gray-500 hover:text-blue-600"
+            onClick={onClose}
+            aria-label="Tutup modal"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          {children}
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Komponen Dropdown User
+  const UserDropdown = () => (
+    <div className="relative ml-3" ref={menuRef}>
       <button
-        className="ml-2 px-3 py-1 rounded-xl bg-red-500 text-white text-xs hover:bg-red-600"
-        onClick={async () => {
-          await supabase.auth.signOut();
-          setUser(null);
-          setShowAnim(true);
-          setTimeout(() => setShowAnim(false), 1500);
-          window.location.reload();
-        }}
+        onClick={() => setShowMenu((v) => !v)}
+        className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-2 py-1.5 rounded-full transition min-w-[44px]"
       >
-        Logout
+        <span className="w-9 h-9 rounded-full bg-blue-400 flex items-center justify-center text-lg font-bold text-white overflow-hidden">
+          {user?.user_metadata?.avatar_url ? (
+            <img
+              src={user.user_metadata.avatar_url}
+              alt="User"
+              className="w-9 h-9 rounded-full object-cover"
+            />
+          ) : (
+            (user?.email?.[0] ?? "U").toUpperCase()
+          )}
+        </span>
+        <span className="font-semibold text-white max-w-[110px] truncate hidden md:inline">
+          {user?.user_metadata?.full_name || user?.email}
+        </span>
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
+          <path d="M7 10l5 5 5-5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
       </button>
+      {showMenu && (
+        <div className="absolute right-0 mt-2 w-56 bg-white shadow-xl rounded-xl z-50 border overflow-hidden animate-fade-in-up">
+          <div className="p-4 border-b">
+            <div className="font-semibold text-gray-900">
+              {user?.user_metadata?.full_name || "User"}
+            </div>
+            <div className="text-xs text-gray-500 truncate">{user?.email}</div>
+          </div>
+          <button
+            className="w-full text-left px-4 py-3 hover:bg-blue-50 flex items-center gap-2"
+            onClick={() => {
+              setShowMenu(false);
+              window.location.href = "/dashboard";
+            }}
+          >
+            <LayoutDashboard className="w-4 h-4 mr-2 text-blue-600" />
+            Dashboard
+          </button>
+          <button
+            className="w-full text-left px-4 py-3 hover:bg-blue-50 flex items-center gap-2 text-red-500"
+            onClick={async () => {
+              await supabase.auth.signOut();
+              window.location.href = "/";
+            }}
+          >
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
+              <path d="M16 17l5-5-5-5M21 12H9M13 21a9 9 0 100-18 9 9 0 000 18z"
+                stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Logout
+          </button>
+        </div>
+      )}
     </div>
   );
 
-  // Responsive logo size
-  const logoSize = typeof window !== "undefined" && window.innerWidth < 768 ? 44 : 70;
-
   return (
     <>
-      {/* ===== Animasi Login/Logout ===== */}
-      <AnimatePresence>
-        {showAnim && (
-          <motion.div
-            initial={{ y: -80, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -80, opacity: 0 }}
-            transition={{ duration: 0.5 }}
-            className="fixed top-6 left-1/2 z-[100] -translate-x-1/2
-                       bg-gradient-to-r from-green-400 via-blue-500 to-purple-500
-                       text-white px-8 py-3 rounded-xl shadow-xl text-lg font-bold tracking-wide"
-          >
-            {user
-              ? "Login Berhasil! Selamat datang di YooRent"
-              : "Logout Berhasil!"}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* ===== Navbar ===== */}
       <motion.nav
         initial={{ y: -25, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.4 }}
-        className={`bg-[#001F3F] w-full fixed top-0 left-0 z-50 transition-shadow duration-300 ${scrolled ? "shadow-lg" : "shadow-none"}`}
+        className={`bg-[#001F3F] w-full fixed top-0 left-0 z-50 transition-shadow duration-300 ${
+          scrolled ? "shadow-lg" : "shadow-none"
+        }`}
       >
         <div className="max-w-6xl mx-auto px-2 md:px-4 flex items-center justify-between h-14 md:h-16">
           {/* Logo */}
@@ -207,7 +227,7 @@ export default function Navbar() {
           {/* Right Side */}
           <div className="flex items-center gap-2">
             {user ? (
-              <UserInfo />
+              <UserDropdown />
             ) : (
               <>
                 <button
@@ -218,11 +238,16 @@ export default function Navbar() {
                 </button>
                 <button
                   onClick={() => setOpenRegister(true)}
-                  className="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-semibold text-white
-                             bg-gradient-to-r from-blue-600 via-green-400 to-purple-500
-                             shadow hover:opacity-90 transition hidden md:inline-block"
+                  className="ml-2 px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-white bg-gradient-to-r from-blue-600 to-green-400 hover:from-blue-700 hover:to-green-500 transition hidden md:inline-block shadow"
+                  disabled={openRegister}
                 >
-                  Daftar Gratis
+                  {openRegister ? (
+                    <svg className="animate-spin h-5 w-5 mr-2 inline" viewBox="0 0 24 24">
+                      <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-70" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                  ) : null}
+                  Daftar
                 </button>
               </>
             )}
@@ -301,10 +326,7 @@ export default function Navbar() {
                       <button
                         onClick={async () => {
                           await supabase.auth.signOut();
-                          setUser(null);
-                          setShowAnim(true);
-                          setTimeout(() => setShowAnim(false), 1500);
-                          window.location.reload();
+                          window.location.href = "/";
                         }}
                         className="w-full px-4 py-2 rounded-lg font-semibold text-white bg-red-500 hover:bg-red-600 transition"
                       >
@@ -321,11 +343,16 @@ export default function Navbar() {
                       </button>
                       <button
                         onClick={() => setOpenRegister(true)}
-                        className="w-full px-4 py-2 rounded-lg font-semibold text-white
-                          bg-gradient-to-r from-blue-600 via-green-400 to-purple-500
-                          shadow hover:opacity-90 transition"
+                        className="w-full px-4 py-2 rounded-lg font-medium text-white bg-gradient-to-r from-blue-600 to-green-400 hover:from-blue-700 hover:to-green-500 transition mt-2 shadow"
+                        disabled={openRegister}
                       >
-                        Daftar Gratis
+                        {openRegister ? (
+                          <svg className="animate-spin h-5 w-5 mr-2 inline" viewBox="0 0 24 24">
+                            <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-70" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                          </svg>
+                        ) : null}
+                        Daftar
                       </button>
                     </>
                   )}
@@ -340,7 +367,10 @@ export default function Navbar() {
       <AnimatePresence>
         {openLogin && (
           <Modal open={openLogin} onClose={() => setOpenLogin(false)}>
-            <LoginModal open={openLogin} onClose={() => setOpenLogin(false)} />
+            <LoginModal
+              open={openLogin}
+              onClose={() => setOpenLogin(false)}
+            />
           </Modal>
         )}
         {openRegister && (
