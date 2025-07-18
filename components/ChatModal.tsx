@@ -4,7 +4,19 @@ import { supabase } from "@/lib/supabaseClient";
 import EmojiPicker from "emoji-picker-react";
 import { Paperclip, Loader2 } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { v4 as uuidv4 } from "uuid"; // --- Tambahkan uuid
+import { v4 as uuidv4 } from "uuid";
+import Image from "next/image";
+
+interface Message {
+  id?: string;
+  chat_id: string;
+  barang_id: string;
+  sender_id: string;
+  receiver_id: string;
+  message: string;
+  created_at: string;
+  file_url?: string | null;
+}
 
 interface ChatModalProps {
   open: boolean;
@@ -27,23 +39,21 @@ export default function ChatModal({
   receiverId,
   receiverName,
 }: ChatModalProps) {
-  const [messages, setMessages] = useState<any[]>([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [sendingFile, setSendingFile] = useState(false);
-  const [showEmoji, setShowEmoji] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [sendingFile, setSendingFile] = useState<boolean>(false);
+  const [showEmoji, setShowEmoji] = useState<boolean>(false);
   const [lastSeen, setLastSeen] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
-
-  // --- chat_id thread (null = belum ada, string = thread sudah ada)
   const [chatId, setChatId] = useState<string | null>(null);
 
   // Close emoji picker jika klik di luar
   useEffect(() => {
-    function handleClickOutside(e: any) {
-      if (pickerRef.current && !pickerRef.current.contains(e.target)) {
+    function handleClickOutside(e: MouseEvent) {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
         setShowEmoji(false);
       }
     }
@@ -55,16 +65,15 @@ export default function ChatModal({
   useEffect(() => {
     if (!open || !barangId || !userId || !receiverId) return;
     const fetchChatId = async () => {
-      // Cari chat_id untuk barang/user ini (dua arah, thread unik per user+barang)
       const { data } = await supabase
         .from("chat")
         .select("chat_id")
         .eq("barang_id", barangId)
         .or(
-          `(sender_id.eq.${userId},receiver_id.eq.${receiverId})`,
+          `(sender_id.eq.${userId},receiver_id.eq.${receiverId})`
         )
         .or(
-          `(sender_id.eq.${receiverId},receiver_id.eq.${userId})`,
+          `(sender_id.eq.${receiverId},receiver_id.eq.${userId})`
         )
         .order("created_at", { ascending: true })
         .limit(1);
@@ -86,9 +95,9 @@ export default function ChatModal({
         .select("*")
         .eq("chat_id", chatId)
         .order("created_at", { ascending: true });
-      setMessages(data ?? []);
+      setMessages((data as Message[]) ?? []);
       if (data && data.length > 0) {
-        const lastMsg = [...data].reverse().find((m) => m.sender_id === receiverId);
+        const lastMsg = [...data].reverse().find((m: Message) => m.sender_id === receiverId);
         setLastSeen(lastMsg ? lastMsg.created_at : null);
       }
     };
@@ -102,12 +111,11 @@ export default function ChatModal({
         { event: "*", schema: "public", table: "chat", filter: `chat_id=eq.${chatId}` },
         (payload) => {
           if (payload.eventType === "INSERT") {
-            setMessages((prev) => [...prev, payload.new]);
-            if (payload.new.sender_id === receiverId) {
-              setLastSeen(payload.new.created_at);
+            setMessages((prev) => [...prev, payload.new as Message]);
+            if ((payload.new as Message).sender_id === receiverId) {
+              setLastSeen((payload.new as Message).created_at);
             }
-            // Notif jika bukan pesan kita
-            if (payload.new.sender_id !== userId) {
+            if ((payload.new as Message).sender_id !== userId) {
               toast("Pesan baru masuk", { icon: "💬" });
             }
           }
@@ -223,9 +231,11 @@ export default function ChatModal({
                     >
                       {msg.file_url && msg.file_url.match(/\.(jpg|jpeg|png|gif)$/i) ? (
                         <a href={msg.file_url} target="_blank" rel="noopener noreferrer">
-                          <img
+                          <Image
                             src={msg.file_url}
                             alt="Gambar"
+                            width={160}
+                            height={120}
                             className="w-40 h-32 rounded-lg object-cover mb-1"
                           />
                         </a>

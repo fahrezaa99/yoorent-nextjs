@@ -4,22 +4,23 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import ChatModal from "@/components/ChatModal";
 
+// Tipe data Barang
 type Barang = {
   id: string;
   nama: string;
   harga: number;
   kategori?: string;
-  user_id?: string;        // <- pastikan ada field ini di DB
-  pemilik_nama?: string;   // opsional, bisa ambil dari relasi user
+  user_id?: string;        // <- harus ada field ini di table
+  pemilik_nama?: string;   // opsional
 };
 
 export default function BarangList() {
   const [barang, setBarang] = useState<Barang[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   // ====== Chat ======
-  const [chatOpen, setChatOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState<boolean>(false);
   const [chatBarang, setChatBarang] = useState<Barang | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
 
@@ -38,7 +39,7 @@ export default function BarangList() {
         .order("created_at", { ascending: false });
 
       if (error) setError(error.message);
-      else setBarang(data || []);
+      else setBarang((data as Barang[]) || []);
       setLoading(false);
     };
     fetchData();

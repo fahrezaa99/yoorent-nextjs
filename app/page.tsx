@@ -24,15 +24,15 @@ type Barang = {
 
 function BarangList() {
   const [barang, setBarang] = useState<Barang[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       const { data, error } = await supabase
-        .from('barang')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .from("barang")
+        .select("*")
+        .order("created_at", { ascending: false });
       if (error) setError(error.message);
       else setBarang(data || []);
       setLoading(false);
@@ -61,9 +61,9 @@ function BarangList() {
 }
 
 // === Page utama ===
-export default function HomePage({ setShowToast, setToastMsg }) {
+export default function HomePage() {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const getUser = async () => {
@@ -82,11 +82,12 @@ export default function HomePage({ setShowToast, setToastMsg }) {
 
   return (
     <>
-      <Navbar setShowToast={setShowToast} setToastMsg={setToastMsg} />
+      <Navbar />
       <HeroSection />
-
-      {/* --- Tambahin BarangList di sini --- */}
-
+      {/* 
+      --- BarangList bisa diaktifkan kalau ingin tampilkan barang user login di homepage ---
+      <BarangList /> 
+      */}
       <PopularCategories />
       <ProductGrid />
       <CTASection />

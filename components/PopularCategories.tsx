@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-// Data kategori, biar clean & scalable
+// Data kategori
 const categories = [
   {
     emoji: "📷",
@@ -42,7 +42,7 @@ const categories = [
   },
 ];
 
-export default function PopularCategories() {
+export default function PopularitasCategories() {
   const router = useRouter();
 
   const handleSewaKategori = (slug: string) => {

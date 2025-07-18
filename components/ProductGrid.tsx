@@ -1,9 +1,20 @@
 "use client";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import BookingPopup from "@/components/BookingPopup"; // pastikan sudah ada file ini
+import BookingPopup from "@/components/BookingPopup"; // Pastikan sudah ada file ini
+import Image from "next/image";
 
-const products = [
+// Tipe produk
+interface Product {
+  id: number;
+  name: string;
+  image: string;
+  location: string;
+  rating: number;
+  price: number;
+}
+
+const products: Product[] = [
   {
     id: 1,
     name: "Canon EOS 80D",
@@ -50,11 +61,18 @@ function formatRupiah(num: number) {
   return "Rp " + num.toLocaleString("id-ID") + "/hari";
 }
 
-export default function ProductGrid() {
-  const [openBooking, setOpenBooking] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+interface BookingProduct {
+  nama: string;
+  lokasi: string;
+  harga: number;
+  foto: string;
+}
 
-  const handleSewaClick = (product: any) => {
+export default function ProductGrid() {
+  const [openBooking, setOpenBooking] = useState<boolean>(false);
+  const [selectedProduct, setSelectedProduct] = useState<BookingProduct | null>(null);
+
+  const handleSewaClick = (product: Product) => {
     setSelectedProduct({
       nama: product.name,
       lokasi: product.location,
@@ -77,11 +95,14 @@ export default function ProductGrid() {
             transition={{ type: "spring", stiffness: 260, damping: 22 }}
             className="bg-white rounded-2xl shadow-lg border border-gray-100 flex flex-col overflow-hidden"
           >
-            <img
+            <Image
               src={product.image}
               alt={product.name}
+              width={400}
+              height={176}
               className="w-full h-44 object-cover object-center rounded-t-2xl"
               loading="lazy"
+              unoptimized
             />
             <div className="p-5 flex-1 flex flex-col">
               <div className="flex items-center text-gray-500 text-sm mb-1">

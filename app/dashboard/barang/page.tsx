@@ -2,10 +2,32 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import Image from "next/image";
 
 const BASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
 
-const emptyForm = {
+interface Barang {
+  id: string;
+  nama: string;
+  kategori: string;
+  lokasi: string;
+  harga: string;
+  kondisi: string;
+  status: string;
+  foto?: string[]; // optional array foto
+  [key: string]: any;
+}
+
+interface FormBarang {
+  nama: string;
+  kategori: string;
+  lokasi: string;
+  harga: string;
+  kondisi: string;
+  status: string;
+}
+
+const emptyForm: FormBarang = {
   nama: "",
   kategori: "",
   lokasi: "",
@@ -15,13 +37,13 @@ const emptyForm = {
 };
 
 export default function DaftarBarangPage() {
-  const [barangs, setBarangs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [barangs, setBarangs] = useState<Barang[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [user, setUser] = useState<{ id: string } | null | undefined>(undefined);
 
   const [lightbox, setLightbox] = useState<{ urls: string[]; index: number } | null>(null);
-  const [editOpen, setEditOpen] = useState(false);
-  const [form, setForm] = useState<any>(emptyForm);
+  const [editOpen, setEditOpen] = useState<boolean>(false);
+  const [form, setForm] = useState<FormBarang>(emptyForm);
   const [formId, setFormId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [notif, setNotif] = useState<{ type: "success" | "error"; msg: string } | null>(null);
@@ -33,7 +55,7 @@ export default function DaftarBarangPage() {
       setUser(data?.user ?? null);
     };
     getUser();
-    // Listen auth change (biar gak error pas logout/login)
+    // Listen auth change
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
@@ -42,24 +64,24 @@ export default function DaftarBarangPage() {
     };
   }, []);
 
-  // ==== INI BAGIAN PENTING: hanya fetch barang milik user login ====
+  // Fetch hanya barang milik user login
   const fetchBarangs = async () => {
     setLoading(true);
-    if (!user) return; // User harus ada!
+    if (!user) return;
     const { data, error } = await supabase
       .from("barang")
       .select("*")
-      .eq("user_id", user.id) // FILTER berdasarkan user yang login!
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false });
-    if (!error && data) setBarangs(data);
+    if (!error && data) setBarangs(data as Barang[]);
     setLoading(false);
   };
 
   useEffect(() => {
-    if (user !== null) fetchBarangs();
+    if (user !== undefined && user !== null) fetchBarangs();
   }, [user]);
 
-  const handleEdit = (item: any) => {
+  const handleEdit = (item: Barang) => {
     setFormId(item.id);
     setForm({
       nama: item.nama,
@@ -100,11 +122,8 @@ export default function DaftarBarangPage() {
     setLoading(false);
   };
 
-  // Jika belum login, tampilkan pesan
-  if (user === null) {
-    return (
-      <div className="text-center py-10">Loading...</div>
-    );
+  if (user === undefined) {
+    return <div className="text-center py-10">Loading...</div>;
   }
   if (!user) {
     return (
@@ -296,10 +315,13 @@ export default function DaftarBarangPage() {
               &times;
             </button>
             <div className="overflow-hidden rounded-lg">
-              <img
+              <Image
                 src={lightbox.urls[lightbox.index]}
                 alt={`Foto ${lightbox.index + 1}`}
                 className="w-full h-auto max-h-[80vh] object-contain"
+                width={900}
+                height={600}
+                unoptimized
               />
             </div>
             {lightbox.urls.length > 1 && (
@@ -357,10 +379,13 @@ export default function DaftarBarangPage() {
               >
                 {/* Thumbnail */}
                 <div className="relative">
-                  <img
-                    src={urls[0]}
+                  <Image
+                    src={urls[0] || "/placeholder.png"}
                     alt={item.nama}
                     className="w-full h-48 object-cover rounded-xl cursor-pointer bg-gray-100"
+                    width={384}
+                    height={192}
+                    unoptimized
                     onClick={() => urls.length > 0 && setLightbox({ urls, index: 0 })}
                   />
                   {urls.length > 1 && (

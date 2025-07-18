@@ -4,7 +4,7 @@ import { ArrowRight, X } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-// --- Modal Login Dummy (siap tempel, bisa upgrade dengan komponen lain) ---
+// --- Modal Login Dummy (bisa upgrade ke komponen auth-mu sendiri) ---
 function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   if (!open) return null;
   return (
@@ -19,6 +19,7 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
         <button
           className="absolute top-4 right-4 text-gray-500 hover:text-blue-600"
           onClick={onClose}
+          aria-label="Tutup modal"
         >
           <X className="w-6 h-6" />
         </button>
@@ -59,17 +60,16 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   );
 }
 
-// --- Simulasi Auth State ---
-// Ganti dengan logic auth beneran di project lo
-const useAuth = () => {
-  // Ganti false -> true kalau mau test "sudah login"
+// --- Simulasi Auth State (ganti dengan logic auth-mu sendiri) ---
+const useAuth = (): { isLoggedIn: boolean } => {
+  // Ganti false ke true jika mau tes login
   const [isLoggedIn] = useState(false);
   return { isLoggedIn };
 };
 
 export default function CTASection() {
   const router = useRouter();
-  const [openLogin, setOpenLogin] = useState(false);
+  const [openLogin, setOpenLogin] = useState<boolean>(false);
   const { isLoggedIn } = useAuth();
 
   const handleGabungClick = () => {

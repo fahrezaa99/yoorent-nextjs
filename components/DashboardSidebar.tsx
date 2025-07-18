@@ -5,6 +5,15 @@ import {
   FaHome, FaBox, FaEnvelope, FaFileAlt, FaUser, FaArrowLeft
 } from "react-icons/fa";
 
+interface MenuItem {
+  label: string;
+  href: string;
+  icon: JSX.Element;
+  bold?: boolean;
+  extra?: string;
+  badge?: number;
+}
+
 export default function DashboardSidebar({
   unreadInbox = 0,
 }: {
@@ -12,8 +21,7 @@ export default function DashboardSidebar({
 }) {
   const pathname = usePathname();
 
-  // Menu data
-  const menu = [
+  const menu: MenuItem[] = [
     {
       label: "Kembali ke Beranda",
       href: "/",
@@ -71,7 +79,7 @@ export default function DashboardSidebar({
                 {item.icon}
                 <span className={`flex-1 ${item.bold ? "font-bold" : ""}`}>{item.label}</span>
                 {/* Badge Notifikasi */}
-                {item.badge && item.badge > 0 && (
+                {typeof item.badge === "number" && item.badge > 0 && (
                   <span className="bg-red-600 text-white text-xs px-2 py-0.5 rounded-full ml-1">
                     {item.badge}
                   </span>

@@ -4,11 +4,11 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 
 export default function MasukPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [error, setError] = useState<string>("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     if (!email || !password) {
@@ -63,7 +63,7 @@ export default function MasukPage() {
           <Link href="/daftar" className="text-blue-600 hover:underline">
             Belum punya akun? Daftar gratis
           </Link>
-          <Link href="#" className="text-gray-500 hover:underline">
+          <Link href="/lupa-password" className="text-gray-500 hover:underline">
             Lupa password?
           </Link>
         </div>

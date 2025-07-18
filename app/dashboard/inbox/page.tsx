@@ -19,7 +19,7 @@ type ChatItem = {
 export default function InboxPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [chats, setChats] = useState<ChatItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
 
   // Ambil userId saat komponen mount
   useEffect(() => {
@@ -38,7 +38,7 @@ export default function InboxPage() {
         .select("*, barang:barang_id(nama)")
         .eq("receiver_id", userId)
         .order("created_at", { ascending: false });
-      setChats(data || []);
+      setChats((data as ChatItem[]) || []);
       setLoading(false);
     };
     fetchChats();
@@ -49,7 +49,7 @@ export default function InboxPage() {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "chat", filter: `receiver_id=eq.${userId}` },
         (payload) => {
-          setChats((prev) => [payload.new, ...prev]);
+          setChats((prev) => [payload.new as ChatItem, ...prev]);
         }
       )
       .subscribe();

@@ -1,11 +1,16 @@
-'use client'
+"use client";
 
 import { useRouter } from "next/navigation";
+
+interface Category {
+  emoji: string;
+  title: string;
+}
 
 export default function KategoriPage() {
   const router = useRouter();
   // Semua kategori, bisa tambah sesuai kebutuhan
-  const allCategories = [
+  const allCategories: Category[] = [
     { emoji: "📷", title: "Kamera & Elektronik" },
     { emoji: "📱", title: "Handphone & Gadget" },
     { emoji: "💻", title: "Laptop & Komputer" },

@@ -2,6 +2,7 @@
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import Image from "next/image";
 
 // Dummy data produk (di real project, nanti fetch dari API/database)
 const products = [
@@ -37,17 +38,30 @@ const products = [
   },
 ];
 
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  location: string;
+  image: string;
+  rating: number;
+  desc: string;
+  detail: string;
+}
+
 export default function ItemDetailPage() {
   const params = useParams();
-  const { id } = params;
+  const { id } = params as { id: string };
 
-  const item = products.find((i) => i.id === id);
+  const item: Product | undefined = products.find((i) => i.id === id);
 
   if (!item) {
     return (
       <div className="max-w-xl mx-auto p-10 text-center">
         <h2 className="text-xl font-bold mb-4">Barang tidak ditemukan</h2>
-        <Link href="/" className="text-blue-600 underline">Kembali ke Beranda</Link>
+        <Link href="/" className="text-blue-600 underline">
+          Kembali ke Beranda
+        </Link>
       </div>
     );
   }
@@ -55,14 +69,21 @@ export default function ItemDetailPage() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow p-8">
-        <motion.img
-          src={item.image}
-          alt={item.name}
-          className="w-full h-72 object-cover rounded-xl mb-6"
+        <motion.div
           initial={{ opacity: 0, scale: 0.94 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
-        />
+        >
+          <Image
+            src={item.image}
+            alt={item.name}
+            width={900}
+            height={288}
+            className="w-full h-72 object-cover rounded-xl mb-6"
+            unoptimized
+            priority
+          />
+        </motion.div>
         <h1 className="text-2xl font-bold mb-2">{item.name}</h1>
         <div className="flex items-center text-gray-600 mb-2">
           <span className="mr-2">⭐ {item.rating}</span>
@@ -77,9 +98,10 @@ export default function ItemDetailPage() {
         <button className="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition shadow">
           Booking Sekarang
         </button>
-        <Link href="/" className="block mt-6 text-blue-600 underline">← Kembali ke Beranda</Link>
+        <Link href="/" className="block mt-6 text-blue-600 underline">
+          ← Kembali ke Beranda
+        </Link>
       </div>
     </div>
   );
 }
-

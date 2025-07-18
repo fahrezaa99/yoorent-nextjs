@@ -14,7 +14,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   // Pilihan styling varian modern
-  let base =
+  const base =
     "h-11 px-5 flex items-center justify-center font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400";
   let variantClass = "";
 

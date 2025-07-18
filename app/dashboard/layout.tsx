@@ -1,9 +1,9 @@
 import DashboardSidebar from "@/components/DashboardSidebar";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  // Ambil unreadInbox dari API, context, atau state
-  // Contoh hardcode sementara:
-  const unreadInbox = 2; // atau fetch jumlah unread inbox
+  // Ambil unreadInbox dari API, context, atau state (misal nanti pakai context, fetch dsb)
+  // Sementara hardcode:
+  const unreadInbox: number = 2; // Ganti dengan fetch jumlah unread sebenarnya jika perlu
 
   return (
     <div className="flex min-h-screen bg-blue-50">

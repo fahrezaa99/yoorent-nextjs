@@ -3,9 +3,24 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { Loader2, UploadCloud } from "lucide-react";
+import Image from "next/image";
+
+// Tipe untuk form dan file
+interface FormBarang {
+  nama: string;
+  kategori: string;
+  lokasi: string;
+  alamat: string;
+  harga: string;
+  deposit: string;
+  deskripsi: string;
+  kondisi: string;
+  whatsapp: string;
+  catatan: string;
+}
 
 export default function TambahBarangPage() {
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<FormBarang>({
     nama: "",
     kategori: "",
     lokasi: "",
@@ -19,18 +34,18 @@ export default function TambahBarangPage() {
   });
   const [foto, setFoto] = useState<File | null>(null);
   const [fotoPreview, setFotoPreview] = useState<string>("");
-  const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [toast, setToast] = useState<string>("");
   const router = useRouter();
 
-  const isFormValid = () =>
-    form.nama &&
-    form.kategori &&
-    form.lokasi &&
-    form.harga &&
-    form.kondisi &&
-    foto &&
-    form.whatsapp;
+  const isFormValid = (): boolean =>
+    !!form.nama &&
+    !!form.kategori &&
+    !!form.lokasi &&
+    !!form.harga &&
+    !!form.kondisi &&
+    !!foto &&
+    !!form.whatsapp;
 
   const handleInput = (
     e:
@@ -42,12 +57,12 @@ export default function TambahBarangPage() {
   };
 
   const handleFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    setFoto(file ?? null);
+    const file = e.target.files?.[0] || null;
+    setFoto(file);
     if (file) setFotoPreview(URL.createObjectURL(file));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!isFormValid()) {
       setToast("Lengkapi semua field yang wajib dan upload foto barang!");
@@ -70,7 +85,6 @@ export default function TambahBarangPage() {
         return;
       }
 
-      // Ambil publicUrl dengan cara yang benar & aman!
       let publicPath = fileName;
       if (data && typeof data.path === "string") {
         publicPath = data.path;
@@ -82,7 +96,8 @@ export default function TambahBarangPage() {
     }
 
     // 2. Insert ke table barang
-    const userId = (await supabase.auth.getUser()).data.user?.id;
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData.user?.id;
     const { error: dbError } = await supabase.from("barang").insert({
       ...form,
       harga: Number(form.harga),
@@ -124,6 +139,7 @@ export default function TambahBarangPage() {
             value={form.nama}
             onChange={handleInput}
             className="w-full p-2 rounded border"
+            required
           />
           <input
             type="text"
@@ -132,6 +148,7 @@ export default function TambahBarangPage() {
             value={form.kategori}
             onChange={handleInput}
             className="w-full p-2 rounded border"
+            required
           />
           <input
             type="text"
@@ -140,6 +157,7 @@ export default function TambahBarangPage() {
             value={form.lokasi}
             onChange={handleInput}
             className="w-full p-2 rounded border"
+            required
           />
           <input
             type="text"
@@ -156,6 +174,7 @@ export default function TambahBarangPage() {
             value={form.harga}
             onChange={handleInput}
             className="w-full p-2 rounded border"
+            required
           />
           <input
             type="number"
@@ -179,6 +198,7 @@ export default function TambahBarangPage() {
             value={form.kondisi}
             onChange={handleInput}
             className="w-full p-2 rounded border"
+            required
           />
           <input
             type="text"
@@ -187,6 +207,7 @@ export default function TambahBarangPage() {
             value={form.whatsapp}
             onChange={handleInput}
             className="w-full p-2 rounded border"
+            required
           />
           <textarea
             name="catatan"
@@ -205,12 +226,16 @@ export default function TambahBarangPage() {
             accept="image/*"
             onChange={handleFoto}
             className="block w-full text-sm text-gray-900"
+            required
           />
           {fotoPreview && (
-            <img
+            <Image
               src={fotoPreview}
               alt="Preview"
               className="h-28 mt-2 rounded object-contain border"
+              width={180}
+              height={112}
+              unoptimized
             />
           )}
         </div>

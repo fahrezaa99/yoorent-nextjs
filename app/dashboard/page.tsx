@@ -1,15 +1,27 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import {
-  User, Book, ShoppingCart, FileText, LogOut,
+  Book, ShoppingCart, FileText,
   Star, CheckCircle2, Calendar, ShieldCheck, Layers,
   Bell, Edit2, UserCircle2
 } from "lucide-react";
 
+// Tipe UserData
+interface UserMetadata {
+  full_name?: string;
+  verified?: boolean;
+}
+interface UserType {
+  id: string;
+  email: string;
+  created_at: string;
+  user_metadata?: UserMetadata;
+}
+
 // Badge komponen
-function Badge({ color, icon, children }: any) {
+function Badge({ color, icon, children }: { color: string; icon: ReactNode; children: ReactNode }) {
   const bg = {
     navy: "bg-blue-950 text-white border-blue-800",
     blue: "bg-blue-100 text-blue-700 border-blue-300",
@@ -25,9 +37,9 @@ function Badge({ color, icon, children }: any) {
 }
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState("");
+  const [user, setUser] = useState<UserType | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [toast, setToast] = useState<string>("");
   const router = useRouter();
 
   // Statistik Card Style (navy variant)
@@ -65,7 +77,12 @@ export default function DashboardPage() {
       if (!data.user) {
         router.push("/");
       } else {
-        setUser(data.user);
+        setUser({
+          id: data.user.id,
+          email: data.user.email,
+          created_at: data.user.created_at,
+          user_metadata: data.user.user_metadata
+        });
       }
       setLoading(false);
     };
@@ -219,10 +236,15 @@ export default function DashboardPage() {
 }
 
 // Shortcut button komponen
-function ShortcutBtn({ icon, label, color, onClick }: any) {
-  const colorMap: any = {
-    navy:
-      "bg-blue-950 text-white border-2 border-blue-900 hover:bg-blue-900 hover:scale-[1.03]",
+interface ShortcutBtnProps {
+  icon: ReactNode;
+  label: string;
+  color: string;
+  onClick: () => void;
+}
+function ShortcutBtn({ icon, label, color, onClick }: ShortcutBtnProps) {
+  const colorMap: Record<string, string> = {
+    navy: "bg-blue-950 text-white border-2 border-blue-900 hover:bg-blue-900 hover:scale-[1.03]",
     blue: "bg-blue-100 text-blue-700 hover:bg-blue-200",
     green: "bg-green-100 text-green-700 hover:bg-green-200",
     purple: "bg-purple-100 text-purple-700 hover:bg-purple-200",
@@ -231,7 +253,7 @@ function ShortcutBtn({ icon, label, color, onClick }: any) {
   return (
     <button
       onClick={onClick}
-      className={`px-6 sm:px-7 py-2.5 sm:py-3 rounded-2xl font-bold text-base transition shadow-lg flex items-center gap-2 ${colorMap[color]} active:scale-95 duration-150`}
+      className={`px-6 sm:px-7 py-2.5 sm:py-3 rounded-2xl font-bold text-base transition shadow-lg flex items-center gap-2 ${colorMap[color] || ""} active:scale-95 duration-150`}
       style={{ minWidth: 120, maxWidth: 200 }}
     >
       {icon} {label}

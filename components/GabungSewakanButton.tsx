@@ -2,8 +2,12 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+interface GabungSewakanButtonProps {
+  openLoginModal: () => void;
+}
+
 // Simulasi cek login user (ganti dengan logic auth asli lo)
-const useAuth = () => {
+const useAuth = (): { isLoggedIn: boolean } => {
   // Ganti sesuai logic auth lo
   const [isLoggedIn] = useState(false); // false = belum login
   return { isLoggedIn };
@@ -11,9 +15,7 @@ const useAuth = () => {
 
 export default function GabungSewakanButton({
   openLoginModal,
-}: {
-  openLoginModal: () => void;
-}) {
+}: GabungSewakanButtonProps) {
   const router = useRouter();
   const { isLoggedIn } = useAuth();
 
@@ -31,7 +33,7 @@ export default function GabungSewakanButton({
       onClick={handleClick}
       type="button"
     >
-      Gabung & Sewakan Barang
+      Gabung &amp; Sewakan Barang
       <span className="ml-2">→</span>
     </button>
   );

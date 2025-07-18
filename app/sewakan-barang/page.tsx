@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import Image from "next/image";
 
 const categories = [
   "Kamera & Elektronik",
@@ -29,13 +30,13 @@ function cleanNumber(value: string | number) {
 }
 
 export default function SewakanBarangPage() {
-  const [sent, setSent] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [sent, setSent] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
   const [preview, setPreview] = useState<string[]>([]);
   const [fotoFiles, setFotoFiles] = useState<File[]>([]);
-  const [harga, setHarga] = useState("");
-  const [deposit, setDeposit] = useState("");
+  const [harga, setHarga] = useState<string>("");
+  const [deposit, setDeposit] = useState<string>("");
   const router = useRouter();
 
   const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -75,8 +76,8 @@ export default function SewakanBarangPage() {
     const catatan = data.get("catatan") as string;
 
     // Upload foto ke Supabase Storage
-    let fotoUrls: string[] = [];
-    for (let fotoFile of fotoFiles) {
+    const fotoUrls: string[] = [];
+    for (const fotoFile of fotoFiles) {
       const ext = fotoFile.name.split(".").pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
       const { error: upErr } = await supabase.storage
@@ -299,11 +300,14 @@ export default function SewakanBarangPage() {
               {preview.length > 0 && (
                 <div className="flex gap-2 mt-2 flex-wrap">
                   {preview.map((src, i) => (
-                    <img
+                    <Image
                       key={i}
                       src={src}
-                      alt={`Preview ${i+1}`}
+                      alt={`Preview ${i + 1}`}
                       className="h-16 w-16 object-cover rounded border"
+                      width={64}
+                      height={64}
+                      unoptimized
                     />
                   ))}
                 </div>

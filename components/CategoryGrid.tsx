@@ -1,5 +1,11 @@
-// components/CategoryGrid.tsx
-const categories = [
+"use client";
+
+interface Category {
+  name: string;
+  emoji: string;
+}
+
+const categories: Category[] = [
   { name: "Kamera", emoji: "📷" },
   { name: "Elektronik", emoji: "🔌" },
   { name: "Outdoor", emoji: "⛺" },

@@ -84,7 +84,7 @@ export default function Footer() {
 }
 
 function SocialIcon({ name }: { name: string }) {
-  const icons = {
+  const icons: Record<string, JSX.Element> = {
     Instagram: (
       <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
         <path d="M7 2C4.243 2 2 4.243 2 7v10c0 2.757 2.243 5 5 5h10c2.757 0 5-2.243 5-5V7c0-2.757-2.243-5-5-5H7zm0 2h10c1.654 0 3 1.346 3 3v10c0 1.654-1.346 3-3 3H7c-1.654 0-3-1.346-3-3V7c0-1.654 1.346-3 3-3zm5 2a5 5 0 100 10 5 5 0 000-10zm0 2a3 3 0 110 6 3 3 0 010-6zm5.5-1a1 1 0 100 2 1 1 0 000-2z" />
@@ -113,7 +113,7 @@ function SocialIcon({ name }: { name: string }) {
       className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-blue-600 dark:hover:bg-blue-600 text-gray-600 dark:text-gray-300 hover:text-white transition-colors"
       aria-label={name}
     >
-      {icons[name as keyof typeof icons]}
+      {icons[name]}
     </a>
   );
 }

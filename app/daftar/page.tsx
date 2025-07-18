@@ -1,19 +1,20 @@
 "use client";
 import React, { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import Link from "next/link";
 
-const RegisterPage = () => {
-  const [showPassword, setShowPassword] = useState(false);
-  const [nama, setNama] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [hp, setHp] = useState("");
-  const [setuju, setSetuju] = useState(false);
+const RegisterPage: React.FC = () => {
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [nama, setNama] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [hp, setHp] = useState<string>("");
+  const [setuju, setSetuju] = useState<boolean>(false);
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
   const [pesan, setPesan] = useState<{ type: "error" | "sukses"; text: string } | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setPesan(null);
 
@@ -155,7 +156,8 @@ const RegisterPage = () => {
             disabled={loading}
           />
           <span className="text-xs text-gray-600">
-            Saya setuju dengan <a href="#" className="text-blue-600 underline">Syarat & Ketentuan</a>
+            Saya setuju dengan{" "}
+            <Link href="/syarat-ketentuan" className="text-blue-600 underline">Syarat & Ketentuan</Link>
           </span>
         </div>
 

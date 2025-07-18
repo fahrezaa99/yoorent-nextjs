@@ -7,19 +7,29 @@ import LoginModal from "./LoginModal";
 import RegisterModal from "./RegisterModal";
 import { supabase } from "@/lib/supabaseClient";
 import YooRentLogo from "./YooRentLogo";
+import Image from "next/image";
+
+interface UserMeta {
+  avatar_url?: string;
+  full_name?: string;
+}
+interface UserType {
+  email?: string;
+  user_metadata?: UserMeta;
+}
 
 export default function Navbar() {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [openLogin, setOpenLogin] = useState(false);
-  const [openRegister, setOpenRegister] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [mobileOpen, setMobileOpen] = useState<boolean>(false);
+  const [openLogin, setOpenLogin] = useState<boolean>(false);
+  const [openRegister, setOpenRegister] = useState<boolean>(false);
+  const [user, setUser] = useState<UserType | null>(null);
 
   // Untuk user dropdown
-  const [showMenu, setShowMenu] = useState(false);
+  const [showMenu, setShowMenu] = useState<boolean>(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Sticky & shadow on scroll
-  const [scrolled, setScrolled] = useState(false);
+  const [scrolled, setScrolled] = useState<boolean>(false);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", onScroll);
@@ -29,7 +39,7 @@ export default function Navbar() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user ?? null));
     const { data: listener } = supabase.auth.onAuthStateChange(
-      (event, session) => setUser(session?.user ?? null)
+      (_event, session) => setUser(session?.user ?? null)
     );
     return () => {
       listener?.subscription.unsubscribe();
@@ -59,23 +69,27 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showMenu]);
 
-  const handleScroll = (id: string) => (e: any) => {
+  const handleScroll = (id: string) => (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: "smooth" });
     setMobileOpen(false);
   };
-  const handleScrollToTop = (e: any) => {
+  const handleScrollToTop = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     window.scrollTo({ top: 0, behavior: "smooth" });
     setMobileOpen(false);
   };
 
-  // Responsive logo size
-  const logoSize =
-    typeof window !== "undefined" && window.innerWidth < 768 ? 44 : 70;
-
-  function Modal({ open, onClose, children }: any) {
+  function Modal({
+    open,
+    onClose,
+    children,
+  }: {
+    open: boolean;
+    onClose: () => void;
+    children: React.ReactNode;
+  }) {
     if (!open) return null;
     return (
       <div
@@ -94,6 +108,7 @@ export default function Navbar() {
             className="absolute right-4 top-4 text-gray-500 hover:text-blue-600"
             onClick={onClose}
             aria-label="Tutup modal"
+            type="button"
           >
             <X className="w-6 h-6" />
           </button>
@@ -109,13 +124,17 @@ export default function Navbar() {
       <button
         onClick={() => setShowMenu((v) => !v)}
         className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-2 py-1.5 rounded-full transition min-w-[44px]"
+        type="button"
       >
         <span className="w-9 h-9 rounded-full bg-blue-400 flex items-center justify-center text-lg font-bold text-white overflow-hidden">
           {user?.user_metadata?.avatar_url ? (
-            <img
+            <Image
               src={user.user_metadata.avatar_url}
               alt="User"
               className="w-9 h-9 rounded-full object-cover"
+              width={36}
+              height={36}
+              unoptimized
             />
           ) : (
             (user?.email?.[0] ?? "U").toUpperCase()
@@ -125,7 +144,7 @@ export default function Navbar() {
           {user?.user_metadata?.full_name || user?.email}
         </span>
         <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
-          <path d="M7 10l5 5 5-5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M7 10l5 5 5-5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
       {showMenu && (
@@ -136,16 +155,14 @@ export default function Navbar() {
             </div>
             <div className="text-xs text-gray-500 truncate">{user?.email}</div>
           </div>
-          <button
+          <Link
+            href="/dashboard"
             className="w-full text-left px-4 py-3 hover:bg-blue-50 flex items-center gap-2"
-            onClick={() => {
-              setShowMenu(false);
-              window.location.href = "/dashboard";
-            }}
+            onClick={() => setShowMenu(false)}
           >
             <LayoutDashboard className="w-4 h-4 mr-2 text-blue-600" />
             Dashboard
-          </button>
+          </Link>
           <button
             className="w-full text-left px-4 py-3 hover:bg-blue-50 flex items-center gap-2 text-red-500"
             onClick={async () => {
@@ -171,9 +188,8 @@ export default function Navbar() {
         initial={{ y: -25, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.4 }}
-        className={`bg-[#001F3F] w-full fixed top-0 left-0 z-50 transition-shadow duration-300 ${
-          scrolled ? "shadow-lg" : "shadow-none"
-        }`}
+        className={`bg-[#001F3F] w-full fixed top-0 left-0 z-50 transition-shadow duration-300 ${scrolled ? "shadow-lg" : "shadow-none"
+          }`}
       >
         <div className="max-w-6xl mx-auto px-2 md:px-4 flex items-center justify-between h-14 md:h-16">
           {/* Logo */}
@@ -233,6 +249,7 @@ export default function Navbar() {
                 <button
                   onClick={() => setOpenLogin(true)}
                   className="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-black bg-white border border-gray-300 hover:bg-gray-200 transition hidden md:inline-block"
+                  type="button"
                 >
                   Masuk
                 </button>
@@ -240,6 +257,7 @@ export default function Navbar() {
                   onClick={() => setOpenRegister(true)}
                   className="ml-2 px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-white bg-gradient-to-r from-blue-600 to-green-400 hover:from-blue-700 hover:to-green-500 transition hidden md:inline-block shadow"
                   disabled={openRegister}
+                  type="button"
                 >
                   {openRegister ? (
                     <svg className="animate-spin h-5 w-5 mr-2 inline" viewBox="0 0 24 24">
@@ -256,6 +274,7 @@ export default function Navbar() {
               onClick={() => setMobileOpen((v) => !v)}
               className="ml-2 p-2 rounded-lg md:hidden text-white hover:bg-gray-800 transition"
               aria-label="Buka menu"
+              type="button"
             >
               <Menu className="w-7 h-7" />
             </button>
@@ -319,6 +338,7 @@ export default function Navbar() {
                         href="/dashboard"
                         className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold text-[#001F3F] bg-white border border-gray-300 hover:bg-gray-100 transition"
                         title="Dashboard"
+                        onClick={() => setMobileOpen(false)}
                       >
                         <LayoutDashboard className="w-5 h-5" />
                         Dashboard
@@ -329,6 +349,7 @@ export default function Navbar() {
                           window.location.href = "/";
                         }}
                         className="w-full px-4 py-2 rounded-lg font-semibold text-white bg-red-500 hover:bg-red-600 transition"
+                        type="button"
                       >
                         Logout
                       </button>
@@ -338,6 +359,7 @@ export default function Navbar() {
                       <button
                         onClick={() => setOpenLogin(true)}
                         className="w-full px-4 py-2 rounded-lg font-medium text-black bg-white border border-gray-300 hover:bg-gray-200 transition"
+                        type="button"
                       >
                         Masuk
                       </button>
@@ -345,6 +367,7 @@ export default function Navbar() {
                         onClick={() => setOpenRegister(true)}
                         className="w-full px-4 py-2 rounded-lg font-medium text-white bg-gradient-to-r from-blue-600 to-green-400 hover:from-blue-700 hover:to-green-500 transition mt-2 shadow"
                         disabled={openRegister}
+                        type="button"
                       >
                         {openRegister ? (
                           <svg className="animate-spin h-5 w-5 mr-2 inline" viewBox="0 0 24 24">

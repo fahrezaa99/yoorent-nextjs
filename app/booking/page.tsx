@@ -1,20 +1,20 @@
 "use client";
-import { useState } from "react";
+import { useState, FormEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function BookingForm() {
   // Dummy harga/hari, bisa di-pass via props nanti
   const pricePerDay = 50000;
-  const [start, setStart] = useState("");
-  const [end, setEnd] = useState("");
-  const [nama, setNama] = useState("");
-  const [kontak, setKontak] = useState("");
-  const [catatan, setCatatan] = useState("");
-  const [modalOpen, setModalOpen] = useState(false);
-  const [total, setTotal] = useState(0);
+  const [start, setStart] = useState<string>("");
+  const [end, setEnd] = useState<string>("");
+  const [nama, setNama] = useState<string>("");
+  const [kontak, setKontak] = useState<string>("");
+  const [catatan, setCatatan] = useState<string>("");
+  const [modalOpen, setModalOpen] = useState<boolean>(false);
+  const [total, setTotal] = useState<number>(0);
 
   // Hitung selisih hari
-  const hitungHari = () => {
+  const hitungHari = (): number => {
     if (!start || !end) return 0;
     const ms = new Date(end).getTime() - new Date(start).getTime();
     const days = Math.ceil(ms / (1000 * 60 * 60 * 24)) || 1;
@@ -22,11 +22,11 @@ export default function BookingForm() {
   };
 
   // Update total otomatis
-  const days = hitungHari();
-  const totalHarga = days * pricePerDay;
+  const days: number = hitungHari();
+  const totalHarga: number = days * pricePerDay;
 
   // Validasi & Submit
-  const handleSubmit = (e: any) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!nama || !kontak || !start || !end) {
       alert("Semua data wajib diisi!");

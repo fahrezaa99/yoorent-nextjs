@@ -10,17 +10,17 @@ import { FaApple } from "react-icons/fa";
 export default function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [setuju, setSetuju] = useState(false);
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [setuju, setSetuju] = useState<boolean>(false);
 
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
 
   if (!open) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
 
@@ -74,7 +74,7 @@ export default function LoginModal({ open, onClose }: { open: boolean; onClose: 
               type="email"
               autoComplete="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={e => setEmail(e.target.value)}
               placeholder="you@email.com"
               required
               disabled={loading}
@@ -87,7 +87,7 @@ export default function LoginModal({ open, onClose }: { open: boolean; onClose: 
               type={showPassword ? "text" : "password"}
               autoComplete="current-password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={e => setPassword(e.target.value)}
               placeholder="********"
               required
               disabled={loading}
@@ -95,7 +95,7 @@ export default function LoginModal({ open, onClose }: { open: boolean; onClose: 
             />
             <button
               type="button"
-              onClick={() => setShowPassword((v) => !v)}
+              onClick={() => setShowPassword(v => !v)}
               disabled={loading}
               className="absolute right-3 top-9 text-gray-400 hover:text-blue-600"
               tabIndex={-1}
@@ -119,7 +119,7 @@ export default function LoginModal({ open, onClose }: { open: boolean; onClose: 
             <input
               type="checkbox"
               checked={setuju}
-              onChange={(e) => setSetuju(e.target.checked)}
+              onChange={e => setSetuju(e.target.checked)}
               disabled={loading}
               required
             />

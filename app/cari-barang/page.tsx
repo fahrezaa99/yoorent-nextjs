@@ -6,6 +6,7 @@ import BookingPopup from "@/components/BookingPopup";
 import Link from "next/link";
 import { MapPin } from "lucide-react";
 import ChatModal from "@/components/ChatModal";
+import Image from "next/image";
 
 const categories = ["Semua", "Kamera", "Drone", "Laptop", "Camping", "Motor"];
 const locations = [
@@ -29,24 +30,40 @@ function formatRupiah(num: number) {
   return "Rp " + num.toLocaleString("id-ID") + "/hari";
 }
 
+interface Product {
+  id: string;
+  nama: string;
+  foto: string[]; // array url/foto
+  harga: number;
+  kategori?: string;
+  lokasi?: string;
+  alamat?: string;
+  kondisi?: string;
+  pemilik_nama?: string;
+  pemilik_foto?: string;
+  user_id?: string;
+  whatsapp?: string;
+  [key: string]: any;
+}
+
 export default function CariBarangPage() {
-  const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("Semua");
-  const [selectedLocation, setSelectedLocation] = useState("Semua");
-  const [selectedHarga, setSelectedHarga] = useState("Semua");
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("Semua");
+  const [selectedLocation, setSelectedLocation] = useState<string>("Semua");
+  const [selectedHarga, setSelectedHarga] = useState<string>("Semua");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   // Booking popup
-  const [openBooking, setOpenBooking] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [openBooking, setOpenBooking] = useState<boolean>(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   // Lightbox
   const [lightbox, setLightbox] = useState<{ urls: string[]; index: number } | null>(null);
 
   // ==== Chat ====
-  const [chatOpen, setChatOpen] = useState(false);
-  const [chatBarang, setChatBarang] = useState<any | null>(null);
+  const [chatOpen, setChatOpen] = useState<boolean>(false);
+  const [chatBarang, setChatBarang] = useState<Product | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
 
   // Ambil user login (supabase)
@@ -64,7 +81,7 @@ export default function CariBarangPage() {
         .from("barang")
         .select("*")
         .order("created_at", { ascending: false });
-      if (!error) setProducts(data || []);
+      if (!error) setProducts((data as Product[]) || []);
       setLoading(false);
     }
     fetchBarang();
@@ -82,7 +99,7 @@ export default function CariBarangPage() {
       (p.pemilik_nama?.toLowerCase().includes(search.toLowerCase())))
   );
 
-  const handleSewaClick = (product: any) => {
+  const handleSewaClick = (product: Product) => {
     setSelectedProduct(product);
     setOpenBooking(true);
   };
@@ -100,12 +117,12 @@ export default function CariBarangPage() {
             type="text"
             placeholder="Cari nama barang, lokasi, atau pemilik…"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={e => setSearch(e.target.value)}
             className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400"
           />
           <select
             value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
+            onChange={e => setSelectedCategory(e.target.value)}
             className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400"
           >
             {categories.map((cat) => (
@@ -114,7 +131,7 @@ export default function CariBarangPage() {
           </select>
           <select
             value={selectedLocation}
-            onChange={(e) => setSelectedLocation(e.target.value)}
+            onChange={e => setSelectedLocation(e.target.value)}
             className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400"
           >
             {locations.map((loc) => (
@@ -123,7 +140,7 @@ export default function CariBarangPage() {
           </select>
           <select
             value={selectedHarga}
-            onChange={(e) => setSelectedHarga(e.target.value)}
+            onChange={e => setSelectedHarga(e.target.value)}
             className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400"
           >
             {hargaRanges.map((h) => (
@@ -154,10 +171,13 @@ export default function CariBarangPage() {
                 &times;
               </button>
               <div className="overflow-hidden rounded-lg">
-                <img
+                <Image
                   src={lightbox.urls[lightbox.index]}
                   alt={`Foto ${lightbox.index + 1}`}
                   className="w-full h-auto max-h-[80vh] object-contain"
+                  width={900}
+                  height={600}
+                  unoptimized
                 />
               </div>
               {lightbox.urls.length > 1 && (
@@ -199,7 +219,7 @@ export default function CariBarangPage() {
           ) : filtered.length > 0 ? (
             filtered.map((product) => {
               const fotos = Array.isArray(product.foto) ? product.foto : [];
-              const urls = fotos.map((raw) =>
+              const urls = fotos.map((raw: string) =>
                 raw.startsWith("http")
                   ? raw
                   : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/barang-foto/${raw}`
@@ -212,10 +232,17 @@ export default function CariBarangPage() {
                 >
                   <Link href={`/barang/${product.id}`}>
                     <div className="relative">
-                      <img
-                        src={urls[0]}
+                      <Image
+                        src={urls[0] || "/placeholder.png"}
                         alt={product.nama}
                         className="w-full h-44 object-contain bg-gray-100 p-2 cursor-pointer transition hover:scale-105"
+                        width={360}
+                        height={176}
+                        unoptimized
+                        onClick={e => {
+                          e.preventDefault();
+                          if (urls[0]) setLightbox({ urls, index: 0 });
+                        }}
                       />
                       {urls.length > 1 && (
                         <button
@@ -250,10 +277,16 @@ export default function CariBarangPage() {
                         <span className="font-medium">{product.kategori}</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-                        <img
-                          src={product.pemilik_foto || "https://randomuser.me/api/portraits/men/32.jpg"}
+                        <Image
+                          src={
+                            product.pemilik_foto ||
+                            "https://randomuser.me/api/portraits/men/32.jpg"
+                          }
                           alt={product.pemilik_nama || "Pemilik"}
                           className="w-6 h-6 rounded-full"
+                          width={24}
+                          height={24}
+                          unoptimized
                         />
                         <span className="font-medium">{product.pemilik_nama || "Pemilik"}</span>
                       </div>

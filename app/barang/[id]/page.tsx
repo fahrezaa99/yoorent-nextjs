@@ -4,11 +4,26 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { MapPin } from "lucide-react";
+import Image from "next/image";
+
+type Barang = {
+  id: string;
+  nama: string;
+  harga: number;
+  foto: string[];      // Array string URL foto
+  lokasi: string;
+  alamat?: string;
+  kategori?: string;
+  kondisi?: string;
+  deskripsi?: string;
+  catatan?: string;
+  whatsapp?: string;
+};
 
 export default function ItemDetailPage() {
   const params = useParams();
   const { id } = params as { id: string };
-  const [item, setItem] = useState<any>(null);
+  const [item, setItem] = useState<Barang | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,7 +34,7 @@ export default function ItemDetailPage() {
         .select("*")
         .eq("id", id)
         .single();
-      setItem(data);
+      setItem(data as Barang | null);
       setLoading(false);
     };
     if (id) fetchItem();
@@ -53,11 +68,17 @@ export default function ItemDetailPage() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow p-8">
-        <img
-          src={fotoUrl}
-          alt={item.nama}
-          className="w-full h-72 object-contain bg-gray-100 rounded-xl mb-6"
-        />
+        {/* Gambar pakai Next.js Image agar linting aman */}
+        <div className="w-full h-72 bg-gray-100 rounded-xl mb-6 relative overflow-hidden">
+          <Image
+            src={fotoUrl}
+            alt={item.nama}
+            fill
+            className="object-contain rounded-xl"
+            sizes="(max-width: 768px) 100vw, 700px"
+            priority
+          />
+        </div>
         <h1 className="text-2xl font-bold mb-2">{item.nama}</h1>
         <div className="flex items-center text-gray-600 mb-2 gap-2">
           <MapPin size={18} className="text-blue-500" />
@@ -70,19 +91,25 @@ export default function ItemDetailPage() {
           Rp {Number(item.harga).toLocaleString("id-ID")}/hari
         </div>
         <div className="mb-3 flex flex-wrap gap-2 text-sm">
-          <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-lg">{item.kategori}</span>
-          <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-lg">Kondisi: {item.kondisi}</span>
+          {item.kategori && (
+            <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-lg">{item.kategori}</span>
+          )}
+          {item.kondisi && (
+            <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-lg">Kondisi: {item.kondisi}</span>
+          )}
         </div>
         <p className="text-gray-700 mb-2">{item.deskripsi}</p>
         {item.catatan && (
           <div className="text-sm text-gray-500 mb-4">{item.catatan}</div>
         )}
-        <button
-          className="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition shadow"
-          onClick={() => window.open(`https://wa.me/${item.whatsapp?.replace(/^0/, "62")}`)}
-        >
-          Booking via WhatsApp
-        </button>
+        {item.whatsapp && (
+          <button
+            className="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition shadow"
+            onClick={() => window.open(`https://wa.me/${item.whatsapp.replace(/^0/, "62")}`)}
+          >
+            Booking via WhatsApp
+          </button>
+        )}
         <Link href="/" className="block mt-6 text-blue-600 underline">← Kembali ke Beranda</Link>
       </div>
     </div>

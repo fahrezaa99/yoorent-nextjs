@@ -2,8 +2,9 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useParams } from "next/navigation";
-import EmojiPicker from "emoji-picker-react";
+import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
 import { Paperclip, Loader2, Check, CheckCheck } from "lucide-react";
+import Image from "next/image";
 
 type Message = {
   id: string;
@@ -22,32 +23,28 @@ export default function ChatDetailPage() {
   const { chat_id } = useParams() as { chat_id: string };
   const [userId, setUserId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [newMsg, setNewMsg] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [newMsg, setNewMsg] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(true);
   const msgEndRef = useRef<HTMLDivElement>(null);
-  const [sendingFile, setSendingFile] = useState(false);
-  const [showEmoji, setShowEmoji] = useState(false);
+  const [sendingFile, setSendingFile] = useState<boolean>(false);
+  const [showEmoji, setShowEmoji] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Fix emoji click (support all emoji-picker-react version)
-  const handleEmojiClick = (emojiData: any /* v4.x */, event?: any) => {
-    // emojiData.emoji (v4.x), emojiData.native (v3.x), fallback
-    const emoji =
-      emojiData.emoji ||
-      emojiData.native ||
-      (typeof emojiData === "string" ? emojiData : "");
-    setNewMsg((msg) => msg + emoji);
+  // Emoji click dengan type
+  const handleEmojiClick = (emojiData: EmojiClickData, _event?: MouseEvent) => {
+    setNewMsg((msg) => msg + (emojiData.emoji || ""));
     setShowEmoji(false);
   };
 
   // Emoji picker close if click outside
   useEffect(() => {
-    function handleClick(e: any) {
+    function handleClick(e: MouseEvent) {
+      const target = e.target as HTMLElement;
       if (
         showEmoji &&
-        e.target.closest &&
-        !e.target.closest(".emoji-picker-react") &&
-        !e.target.closest("#emoji-trigger")
+        target.closest &&
+        !target.closest(".emoji-picker-react") &&
+        !target.closest("#emoji-trigger")
       ) {
         setShowEmoji(false);
       }
@@ -77,10 +74,10 @@ export default function ChatDetailPage() {
         .select("*")
         .eq("chat_id", chat_id)
         .order("created_at", { ascending: true });
-      setMessages(data || []);
+      setMessages((data as Message[]) || []);
       setLoading(false);
 
-      // Mark as read all pesan yang receiver_id == userId (jika ada unread)
+      // Mark as read
       if (data && data.some((msg: Message) => msg.receiver_id === userId && !msg.is_read)) {
         await supabase
           .from("chat")
@@ -100,17 +97,16 @@ export default function ChatDetailPage() {
         { event: "*", schema: "public", table: "chat", filter: `chat_id=eq.${chat_id}` },
         (payload) => {
           if (payload.eventType === "INSERT") {
-            setMessages((prev) => [...prev, payload.new]);
+            setMessages((prev) => [...prev, payload.new as Message]);
           }
-          // Otomatis read jika ada pesan baru buat userId ini
           if (
             payload.eventType === "INSERT" &&
-            payload.new.receiver_id === userId
+            (payload.new as Message).receiver_id === userId
           ) {
             supabase
               .from("chat")
               .update({ is_read: true })
-              .eq("id", payload.new.id);
+              .eq("id", (payload.new as Message).id);
           }
         }
       )
@@ -119,13 +115,13 @@ export default function ChatDetailPage() {
     return () => supabase.removeChannel(channel);
   }, [chat_id, userId]);
 
-  // Handle kirim pesan, auto assign receiver_id & barang_id (lawan chat)
+  // Handle kirim pesan
   const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!userId || !newMsg.trim()) return;
 
-    let receiverId = null;
-    let barangId = null;
+    let receiverId: string | null = null;
+    let barangId: string | null = null;
     for (const msg of messages) {
       if (msg.sender_id !== userId) receiverId = msg.sender_id;
       if (msg.receiver_id !== userId) receiverId = msg.receiver_id;
@@ -160,15 +156,14 @@ export default function ChatDetailPage() {
     const file = e.target.files?.[0];
     if (!file || !userId) return;
     setSendingFile(true);
-    // --- Simpel: upload ke storage 'chat-files', lalu kirim URL ke chat
     const fileExt = file.name.split(".").pop();
     const fileName = `${Date.now()}_${Math.floor(Math.random() * 9999)}.${fileExt}`;
     const { data, error } = await supabase.storage
       .from("chat-files")
       .upload(fileName, file, { upsert: true });
     if (!error && data?.path) {
-      let receiverId = null;
-      let barangId = null;
+      let receiverId: string | null = null;
+      let barangId: string | null = null;
       for (const msg of messages) {
         if (msg.sender_id !== userId) receiverId = msg.sender_id;
         if (msg.receiver_id !== userId) receiverId = msg.receiver_id;
@@ -204,7 +199,7 @@ export default function ChatDetailPage() {
       </div>
     );
 
-  // --- Ambil avatar URL (contoh: random avatar, bisa custom sesuai user profile)
+  // Ambil avatar URL
   const getAvatar = (msg: Message) =>
     msg.avatar_url
       ? msg.avatar_url
@@ -228,10 +223,13 @@ export default function ChatDetailPage() {
                   className={`flex w-full items-end ${isMine ? "justify-end" : "justify-start"} mb-1`}
                 >
                   {!isMine && (
-                    <img
+                    <Image
                       src={getAvatar(msg)}
                       alt="avatar"
                       className="w-8 h-8 rounded-full mr-2 border bg-white object-cover"
+                      width={32}
+                      height={32}
+                      unoptimized
                     />
                   )}
                   <div
@@ -248,10 +246,13 @@ export default function ChatDetailPage() {
                     {/* Pesan / File */}
                     {msg.file_url && msg.file_url.match(/\.(jpg|jpeg|png|gif)$/i) ? (
                       <a href={msg.file_url} target="_blank" rel="noopener noreferrer">
-                        <img
+                        <Image
                           src={msg.file_url}
                           alt="Gambar"
                           className="w-44 h-36 rounded-lg object-cover mb-1"
+                          width={176}
+                          height={144}
+                          unoptimized
                         />
                       </a>
                     ) : msg.file_url ? (
@@ -280,10 +281,13 @@ export default function ChatDetailPage() {
                     </div>
                   </div>
                   {isMine && (
-                    <img
+                    <Image
                       src={getAvatar(msg)}
                       alt="avatar"
                       className="w-8 h-8 rounded-full ml-2 border bg-white object-cover"
+                      width={32}
+                      height={32}
+                      unoptimized
                     />
                   )}
                 </div>

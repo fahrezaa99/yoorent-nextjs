@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 export default function Hero() {
   return (
     <section
@@ -33,12 +35,18 @@ export default function Hero() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
-            <button className="bg-gradient-to-r from-blue-600 via-green-600 to-purple-600 text-white px-10 py-4 rounded-xl font-semibold text-lg hover:opacity-90 transition-all shadow-2xl transform hover:-translate-y-1">
+            <Link
+              href="/sewakan-barang"
+              className="bg-gradient-to-r from-blue-600 via-green-600 to-purple-600 text-white px-10 py-4 rounded-xl font-semibold text-lg hover:opacity-90 transition-all shadow-2xl transform hover:-translate-y-1"
+            >
               Mulai Sewakan & Raup Cuan
-            </button>
-            <button className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-10 py-4 rounded-xl font-semibold text-lg hover:shadow-lg transition-all border-2 border-gray-200 dark:border-gray-700 hover:border-blue-600">
+            </Link>
+            <Link
+              href="/cari-barang"
+              className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-10 py-4 rounded-xl font-semibold text-lg hover:shadow-lg transition-all border-2 border-gray-200 dark:border-gray-700 hover:border-blue-600"
+            >
               Jelajahi Barang Sewa
-            </button>
+            </Link>
           </div>
         </div>
 

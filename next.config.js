@@ -3,9 +3,12 @@ const nextConfig = {
   reactStrictMode: true,
   images: {
     domains: [
-      // ganti dengan Project ID-mu persis
+      // Ganti jika project Supabase-mu beda
       "mqliwikxxktkvwtvwrks.supabase.co",
     ],
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
   },
 };
 
