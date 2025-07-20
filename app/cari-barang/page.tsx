@@ -28,14 +28,15 @@ interface Product {
   nama: string;
   foto: string[];
   harga: number;
-  kategori: string;
-  lokasi: string;
-  alamat: string;
-  kondisi: string;
-  pemilik_nama: string;
-  pemilik_foto: string;
-  user_id: string;
+  kategori?: string;
+  lokasi: string;     // ← ubah jadi required (bukan optional)
+  alamat?: string;
+  kondisi?: string;
+  pemilik_nama?: string;
+  pemilik_foto?: string;
+  user_id?: string;
   whatsapp?: string;
+  [key: string]: unknown;
 }
 
 export default function CariBarangPage() {
@@ -71,23 +72,7 @@ export default function CariBarangPage() {
         .from("barang")
         .select("*")
         .order("created_at", { ascending: false });
-
-      // Map dan force value jadi string jika null/undefined
-      const safeProducts: Product[] = ((data as any[]) || []).map((item) => ({
-        id: item.id,
-        nama: item.nama ?? "",
-        foto: Array.isArray(item.foto) ? item.foto : [],
-        harga: item.harga ?? 0,
-        kategori: item.kategori ?? "",
-        lokasi: item.lokasi ?? "",
-        alamat: item.alamat ?? "",
-        kondisi: item.kondisi ?? "",
-        pemilik_nama: item.pemilik_nama ?? "",
-        pemilik_foto: item.pemilik_foto ?? "",
-        user_id: item.user_id ?? "",
-        whatsapp: item.whatsapp ?? "",
-      }));
-      if (!error) setProducts(safeProducts);
+      if (!error) setProducts((data as Product[]) || []);
       setLoading(false);
     }
     fetchBarang();
@@ -98,10 +83,10 @@ export default function CariBarangPage() {
     (selectedLocation === "Semua" || p.lokasi === selectedLocation) &&
     (selectedHarga === "Semua" ||
       (p.harga >= hargaRanges.find((h) => h.label === selectedHarga)!.min &&
-        p.harga <= hargaRanges.find((h) => h.label === selectedHarga)!.max)) &&
+       p.harga <= hargaRanges.find((h) => h.label === selectedHarga)!.max)) &&
     ((p.nama?.toLowerCase().includes(search.toLowerCase())) ||
-      (p.lokasi?.toLowerCase().includes(search.toLowerCase())) ||
-      (p.pemilik_nama?.toLowerCase().includes(search.toLowerCase())))
+     (p.lokasi?.toLowerCase().includes(search.toLowerCase())) ||
+     (p.pemilik_nama?.toLowerCase().includes(search.toLowerCase())))
   );
 
   const handleSewaClick = (product: Product) => {
@@ -236,158 +221,60 @@ export default function CariBarangPage() {
                   className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition flex flex-col"
                 >
                   <Link href={`/barang/${product.id}`}>
-                    <div className="relative">
+                    <div className="relative h-48 w-full">
                       <Image
                         src={urls[0] || "/placeholder.png"}
                         alt={product.nama}
-                        className="w-full h-44 object-contain bg-gray-100 p-2 cursor-pointer transition hover:scale-105"
-                        width={360}
-                        height={176}
+                        fill
+                        className="object-cover"
                         unoptimized
-                        onClick={e => {
-                          e.preventDefault();
-                          if (urls[0]) setLightbox({ urls, index: 0 });
-                        }}
                       />
-                      {urls.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={e => {
-                            e.preventDefault();
-                            setLightbox({ urls, index: 0 });
-                          }}
-                          className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded"
-                        >
-                          📷 Lihat {urls.length} Foto
-                        </button>
-                      )}
                     </div>
                   </Link>
                   <div className="p-4 flex-1 flex flex-col justify-between">
                     <div>
-                      <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
-                        <MapPin size={16} className="text-blue-500" />
-                        {product.lokasi}
-                        {product.alamat && (
-                          <span className="text-gray-400 text-xs ml-2">{product.alamat}</span>
-                        )}
-                      </div>
-                      <Link href={`/barang/${product.id}`}>
-                        <h2 className="font-semibold text-lg text-gray-800 mb-1 truncate hover:text-blue-700 transition">
-                          {product.nama}
-                        </h2>
-                      </Link>
-                      <div className="text-sm text-gray-600 mb-2">
-                        Kondisi: <span className="font-medium">{product.kondisi}</span> • Jenis:{" "}
-                        <span className="font-medium">{product.kategori}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-                        <Image
-                          src={
-                            product.pemilik_foto ||
-                            "https://randomuser.me/api/portraits/men/32.jpg"
-                          }
-                          alt={product.pemilik_nama || "Pemilik"}
-                          className="w-6 h-6 rounded-full"
-                          width={24}
-                          height={24}
-                          unoptimized
-                        />
-                        <span className="font-medium">{product.pemilik_nama || "Pemilik"}</span>
-                      </div>
+                      <h2 className="text-lg font-semibold">{product.nama}</h2>
+                      <p className="flex items-center text-sm text-gray-500 mt-1">
+                        <MapPin className="mr-1 w-4 h-4" /> {product.lokasi}
+                      </p>
                     </div>
-                    <div>
-                      <div className="text-blue-600 text-xl font-bold mb-3">
-                        {formatRupiah(product.harga)}
-                      </div>
-                      <div className="flex gap-2 mb-3">
-                        {/* ======= CHAT BUTTON ======= */}
-                        <button
-                          onClick={() => {
-                            setChatBarang(product);
-                            setChatOpen(true);
-                          }}
-                          className="flex-shrink-0 px-4 py-2 border border-blue-600 text-blue-600 rounded-lg text-sm hover:bg-blue-50 transition"
-                          disabled={!userId || !product.user_id}
-                        >
-                          Chat
-                        </button>
-                        {product.whatsapp ? (
-                          <a
-                            href={`https://wa.me/${product.whatsapp.replace(/^0/, "62")}`}
-                            target="_blank"
-                            rel="noopener"
-                            className="flex-shrink-0 px-4 py-2 border border-green-500 text-green-600 rounded-lg text-sm hover:bg-green-50"
-                          >
-                            WhatsApp
-                          </a>
-                        ) : (
-                          <button
-                            className="flex-shrink-0 px-4 py-2 border border-gray-300 text-gray-400 rounded-lg text-sm cursor-not-allowed"
-                            disabled
-                            title="Nomor WhatsApp tidak tersedia"
-                          >
-                            WhatsApp
-                          </button>
-                        )}
-                      </div>
+                    <div className="mt-3 flex items-center justify-between">
+                      <span className="font-bold">{formatRupiah(product.harga)}</span>
                       <button
                         onClick={() => handleSewaClick(product)}
-                        className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm hover:bg-blue-700 transition"
+                        className="px-3 py-1 bg-blue-600 text-white rounded"
                       >
-                        Sewa Sekarang
+                        Sewa
                       </button>
-                      <Link
-                        href={`/barang/${product.id}`}
-                        className="w-full mt-2 block bg-gray-100 text-blue-600 py-2 rounded-lg text-sm hover:bg-blue-50 text-center font-semibold transition"
-                      >
-                        Lihat Detail
-                      </Link>
                     </div>
                   </div>
                 </div>
               );
             })
           ) : (
-            <div className="col-span-full text-center text-gray-500 py-8">
-              Barang tidak ditemukan.
-            </div>
+            <p className="col-span-full text-center text-gray-500">Tidak ada barang ditemukan.</p>
           )}
         </div>
+
+        {/* Booking Popup */}
+        {selectedProduct && (
+          <BookingPopup
+            open={openBooking}
+            onClose={() => setOpenBooking(false)}
+            barang={selectedProduct}
+          />
+        )}
+
+        {/* Chat Modal */}
+        {selectedProduct && (
+          <ChatModal
+            open={chatOpen}
+            onClose={() => setChatOpen(false)}
+            barang={chatBarang!}
+            userId={userId!}
+          />
+        )}
       </div>
-
-      {/* Chat Modal */}
-      {chatOpen && chatBarang && userId && chatBarang.user_id && (
-        <ChatModal
-          open={chatOpen}
-          onClose={() => setChatOpen(false)}
-          barangId={chatBarang.id}
-          userId={userId}
-          receiverId={chatBarang.user_id}
-          receiverName={chatBarang.pemilik_nama || "Pemilik"}
-        />
-      )}
-
-      {/* Booking Popup */}
-      {selectedProduct && (
-        <BookingPopup
-          open={openBooking}
-          onClose={() => setOpenBooking(false)}
-          barang={{
-            ...selectedProduct,
-            lokasi: selectedProduct.lokasi ?? "", // fix tipe string, TIDAK undefined
-            kategori: selectedProduct.kategori ?? "",
-            alamat: selectedProduct.alamat ?? "",
-            kondisi: selectedProduct.kondisi ?? "",
-            pemilik_nama: selectedProduct.pemilik_nama ?? "",
-            pemilik_foto: selectedProduct.pemilik_foto ?? "",
-            user_id: selectedProduct.user_id ?? "",
-            nama: selectedProduct.nama ?? "",
-            foto: selectedProduct.foto ?? [],
-            harga: selectedProduct.harga ?? 0,
-          }}
-        />
-      )}
     </main>
   );
 }
