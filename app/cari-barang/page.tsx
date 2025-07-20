@@ -29,7 +29,7 @@ interface Product {
   foto: string[];
   harga: number;
   kategori?: string;
-  lokasi: string;     // ← ubah jadi required (bukan optional)
+  lokasi: string;
   alamat?: string;
   kondisi?: string;
   pemilik_nama?: string;
@@ -47,14 +47,11 @@ export default function CariBarangPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Booking popup
   const [openBooking, setOpenBooking] = useState<boolean>(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  // Lightbox
   const [lightbox, setLightbox] = useState<{ urls: string[]; index: number } | null>(null);
 
-  // ==== Chat ====
   const [chatOpen, setChatOpen] = useState<boolean>(false);
   const [chatBarang, setChatBarang] = useState<Product | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -83,15 +80,20 @@ export default function CariBarangPage() {
     (selectedLocation === "Semua" || p.lokasi === selectedLocation) &&
     (selectedHarga === "Semua" ||
       (p.harga >= hargaRanges.find((h) => h.label === selectedHarga)!.min &&
-       p.harga <= hargaRanges.find((h) => h.label === selectedHarga)!.max)) &&
+        p.harga <= hargaRanges.find((h) => h.label === selectedHarga)!.max)) &&
     ((p.nama?.toLowerCase().includes(search.toLowerCase())) ||
-     (p.lokasi?.toLowerCase().includes(search.toLowerCase())) ||
-     (p.pemilik_nama?.toLowerCase().includes(search.toLowerCase())))
+      (p.lokasi?.toLowerCase().includes(search.toLowerCase())) ||
+      (p.pemilik_nama?.toLowerCase().includes(search.toLowerCase())))
   );
 
   const handleSewaClick = (product: Product) => {
     setSelectedProduct(product);
     setOpenBooking(true);
+  };
+
+  const handleChatClick = (product: Product) => {
+    setChatBarang(product);
+    setChatOpen(true);
   };
 
   return (
@@ -150,7 +152,7 @@ export default function CariBarangPage() {
           </button>
         </div>
 
-        {/* Lightbox Modal */}
+        {/* Lightbox */}
         {lightbox && (
           <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
             <div className="relative w-full max-w-3xl p-4">
@@ -266,12 +268,14 @@ export default function CariBarangPage() {
         )}
 
         {/* Chat Modal */}
-        {selectedProduct && (
+        {chatBarang && (
           <ChatModal
             open={chatOpen}
             onClose={() => setChatOpen(false)}
-            barang={chatBarang!}
+            barangId={chatBarang.id}
             userId={userId!}
+            receiverId={chatBarang.user_id!}
+            receiverName={chatBarang.pemilik_nama || "Pemilik"}
           />
         )}
       </div>
