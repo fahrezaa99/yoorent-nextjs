@@ -30,13 +30,11 @@ export default function ChatDetailPage() {
   const [showEmoji, setShowEmoji] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Emoji click dengan type
-  const handleEmojiClick = (emojiData: EmojiClickData, _event?: MouseEvent) => {
+  const handleEmojiClick = (emojiData: EmojiClickData) => {
     setNewMsg((msg) => msg + (emojiData.emoji || ""));
     setShowEmoji(false);
   };
 
-  // Emoji picker close if click outside
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       const target = e.target as HTMLElement;
@@ -53,7 +51,6 @@ export default function ChatDetailPage() {
     return () => window.removeEventListener("mousedown", handleClick);
   }, [showEmoji]);
 
-  // Scroll to bottom if messages updated
   useEffect(() => {
     msgEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -64,9 +61,9 @@ export default function ChatDetailPage() {
     });
   }, []);
 
-  // Fetch messages
   useEffect(() => {
     if (!chat_id) return;
+
     const fetchMsgs = async () => {
       setLoading(true);
       const { data } = await supabase
@@ -77,7 +74,6 @@ export default function ChatDetailPage() {
       setMessages((data as Message[]) || []);
       setLoading(false);
 
-      // Mark as read
       if (data && data.some((msg: Message) => msg.receiver_id === userId && !msg.is_read)) {
         await supabase
           .from("chat")
@@ -87,9 +83,9 @@ export default function ChatDetailPage() {
           .eq("is_read", false);
       }
     };
-    fetchMsgs();
 
-    // Realtime update
+    fetchMsgs(); // ✅ Panggil async function, tidak return Promise!
+
     const channel = supabase
       .channel("chat-detail")
       .on(
@@ -115,7 +111,6 @@ export default function ChatDetailPage() {
     return () => supabase.removeChannel(channel);
   }, [chat_id, userId]);
 
-  // Handle kirim pesan
   const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!userId || !newMsg.trim()) return;
@@ -128,30 +123,24 @@ export default function ChatDetailPage() {
       if (msg.barang_id) barangId = msg.barang_id;
       if (receiverId && barangId) break;
     }
-    if (!receiverId) {
-      alert("receiver_id tidak ditemukan, chat gagal.");
-      return;
-    }
-    if (!barangId) {
-      alert("barang_id tidak ditemukan, chat gagal.");
+    if (!receiverId || !barangId) {
+      alert("receiver_id/barang_id tidak ditemukan!");
       return;
     }
 
-    const { error } = await supabase.from("chat").insert([
-      {
-        chat_id,
-        sender_id: userId,
-        receiver_id: receiverId,
-        barang_id: barangId,
-        message: newMsg,
-        is_read: false,
-      },
-    ]);
+    const { error } = await supabase.from("chat").insert([{
+      chat_id,
+      sender_id: userId,
+      receiver_id: receiverId,
+      barang_id: barangId,
+      message: newMsg,
+      is_read: false,
+    }]);
+
     if (!error) setNewMsg("");
     else alert("Gagal kirim pesan: " + error.message);
   };
 
-  // Upload file/gambar
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !userId) return;
@@ -161,6 +150,7 @@ export default function ChatDetailPage() {
     const { data, error } = await supabase.storage
       .from("chat-files")
       .upload(fileName, file, { upsert: true });
+
     if (!error && data?.path) {
       let receiverId: string | null = null;
       let barangId: string | null = null;
@@ -175,31 +165,28 @@ export default function ChatDetailPage() {
         setSendingFile(false);
         return;
       }
+
       const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/chat-files/${fileName}`;
-      await supabase.from("chat").insert([
-        {
-          chat_id,
-          sender_id: userId,
-          receiver_id: receiverId,
-          barang_id: barangId,
-          message: "",
-          file_url: publicUrl,
-          is_read: false,
-        },
-      ]);
+      await supabase.from("chat").insert([{
+        chat_id,
+        sender_id: userId,
+        receiver_id: receiverId,
+        barang_id: barangId,
+        message: "",
+        file_url: publicUrl,
+        is_read: false,
+      }]);
     }
+
     setSendingFile(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   if (!userId)
     return (
-      <div className="py-10 text-center">
-        Harap login dulu
-      </div>
+      <div className="py-10 text-center">Harap login dulu</div>
     );
 
-  // Ambil avatar URL
   const getAvatar = (msg: Message) =>
     msg.avatar_url
       ? msg.avatar_url
@@ -233,17 +220,12 @@ export default function ChatDetailPage() {
                     />
                   )}
                   <div
-                    className={`
-                      max-w-[78vw] md:max-w-md px-4 py-2
-                      rounded-2xl break-words shadow
-                      flex flex-col
-                      ${isMine
+                    className={`max-w-[78vw] md:max-w-md px-4 py-2 rounded-2xl break-words shadow flex flex-col ${
+                      isMine
                         ? "bg-blue-600 text-white rounded-tr-md"
                         : "bg-gray-100 text-gray-900 border rounded-tl-md"
-                      }
-                    `}
+                    }`}
                   >
-                    {/* Pesan / File */}
                     {msg.file_url && msg.file_url.match(/\.(jpg|jpeg|png|gif)$/i) ? (
                       <a href={msg.file_url} target="_blank" rel="noopener noreferrer">
                         <Image
@@ -266,7 +248,9 @@ export default function ChatDetailPage() {
                       </a>
                     ) : null}
                     {msg.message && <div className="text-[15px]">{msg.message}</div>}
-                    <div className={`flex items-center gap-1 text-[11px] mt-1 ${isMine ? "justify-end text-blue-200" : "justify-start text-gray-400"}`}>
+                    <div className={`flex items-center gap-1 text-[11px] mt-1 ${
+                      isMine ? "justify-end text-blue-200" : "justify-start text-gray-400"
+                    }`}>
                       <span>
                         {new Date(msg.created_at).toLocaleTimeString("id-ID", {
                           hour: "2-digit",
@@ -296,9 +280,9 @@ export default function ChatDetailPage() {
           )}
           <div ref={msgEndRef} />
         </div>
+
         {/* Form balas */}
         <form onSubmit={handleSend} className="flex gap-2 w-full sticky bottom-0">
-          {/* Emoji button */}
           <button
             type="button"
             id="emoji-trigger"
@@ -318,10 +302,8 @@ export default function ChatDetailPage() {
               />
             </div>
           )}
-          {/* File upload */}
           <button
             type="button"
-            title="Kirim gambar/file"
             className="text-blue-500 px-1"
             disabled={sendingFile}
             onClick={() => fileInputRef.current?.click()}
