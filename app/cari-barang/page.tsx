@@ -28,15 +28,14 @@ interface Product {
   nama: string;
   foto: string[];
   harga: number;
-  kategori?: string;
-  lokasi?: string;
-  alamat?: string;
-  kondisi?: string;
-  pemilik_nama?: string;
-  pemilik_foto?: string;
-  user_id?: string;
+  kategori: string;
+  lokasi: string;
+  alamat: string;
+  kondisi: string;
+  pemilik_nama: string;
+  pemilik_foto: string;
+  user_id: string;
   whatsapp?: string;
-  [key: string]: unknown;
 }
 
 export default function CariBarangPage() {
@@ -72,7 +71,23 @@ export default function CariBarangPage() {
         .from("barang")
         .select("*")
         .order("created_at", { ascending: false });
-      if (!error) setProducts((data as Product[]) || []);
+
+      // Map dan force value jadi string jika null/undefined
+      const safeProducts: Product[] = ((data as any[]) || []).map((item) => ({
+        id: item.id,
+        nama: item.nama ?? "",
+        foto: Array.isArray(item.foto) ? item.foto : [],
+        harga: item.harga ?? 0,
+        kategori: item.kategori ?? "",
+        lokasi: item.lokasi ?? "",
+        alamat: item.alamat ?? "",
+        kondisi: item.kondisi ?? "",
+        pemilik_nama: item.pemilik_nama ?? "",
+        pemilik_foto: item.pemilik_foto ?? "",
+        user_id: item.user_id ?? "",
+        whatsapp: item.whatsapp ?? "",
+      }));
+      if (!error) setProducts(safeProducts);
       setLoading(false);
     }
     fetchBarang();
@@ -341,7 +356,7 @@ export default function CariBarangPage() {
         </div>
       </div>
 
-            {/* Chat Modal */}
+      {/* Chat Modal */}
       {chatOpen && chatBarang && userId && chatBarang.user_id && (
         <ChatModal
           open={chatOpen}
@@ -360,11 +375,19 @@ export default function CariBarangPage() {
           onClose={() => setOpenBooking(false)}
           barang={{
             ...selectedProduct,
-            lokasi: selectedProduct.lokasi ?? "-", // <<--- PENTING!
+            lokasi: selectedProduct.lokasi ?? "", // fix tipe string, TIDAK undefined
+            kategori: selectedProduct.kategori ?? "",
+            alamat: selectedProduct.alamat ?? "",
+            kondisi: selectedProduct.kondisi ?? "",
+            pemilik_nama: selectedProduct.pemilik_nama ?? "",
+            pemilik_foto: selectedProduct.pemilik_foto ?? "",
+            user_id: selectedProduct.user_id ?? "",
+            nama: selectedProduct.nama ?? "",
+            foto: selectedProduct.foto ?? [],
+            harga: selectedProduct.harga ?? 0,
           }}
         />
       )}
     </main>
   );
 }
-
