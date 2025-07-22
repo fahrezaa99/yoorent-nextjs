@@ -1,15 +1,19 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import LoadingModal from "@/components/LoadingModal";
 import { supabase } from "@/lib/supabaseClient";
 import { signIn } from "next-auth/react";
 import { FcGoogle } from "react-icons/fc";
 import { FaApple } from "react-icons/fa";
 
-export default function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const router = useRouter();
+interface LoginModalProps {
+  open: boolean;
+  onClose: () => void;
+  onSuccess: () => void; // Tambah prop ini!
+}
 
+export default function LoginModal({ open, onClose, onSuccess }: LoginModalProps) {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -34,25 +38,34 @@ export default function LoginModal({ open, onClose }: { open: boolean; onClose: 
     }
 
     setLoading(true);
-    const { error: supaErr } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { error: supaErr } = await supabase.auth.signInWithPassword({ email, password });
 
-    setTimeout(() => {
-      setLoading(false);
-      if (supaErr) {
-        setError(supaErr.message);
+    if (supaErr) {
+      if (
+        supaErr.message?.toLowerCase().includes("invalid login credentials") ||
+        supaErr.message?.toLowerCase().includes("wrong password") ||
+        supaErr.message?.toLowerCase().includes("invalid password") ||
+        supaErr.message?.toLowerCase().includes("invalid email or password")
+      ) {
+        setError("Salah password.");
       } else {
-        onClose();
-        router.push("/");
+        setError(supaErr.message);
       }
-    }, 1200);
+      setLoading(false);
+    } else {
+      setLoading(false);
+      onSuccess(); // <-- Modal hilang, parent akan tampilkan loading 4 detik!
+    }
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 sm:p-8 mx-2 sm:mx-0">
+    <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-[100]" onClick={onClose}>
+      <LoadingModal show={loading} message="Sedang login ke YooRent..." />
+      <div
+        className={`relative bg-white rounded-2xl shadow-2xl w-[95vw] max-w-md p-7 mx-2 transition-all duration-300
+          ${loading ? "opacity-60 pointer-events-none select-none blur-[1px]" : ""}`}
+        onClick={e => e.stopPropagation()}
+      >
         <button
           type="button"
           onClick={onClose}
@@ -78,7 +91,7 @@ export default function LoginModal({ open, onClose }: { open: boolean; onClose: 
               placeholder="you@email.com"
               required
               disabled={loading}
-              className="w-full rounded-lg border px-4 py-3 focus:border-blue-400 outline-none mt-1"
+              className="w-full rounded-xl border px-4 py-3 focus:border-blue-400 outline-none mt-1 bg-gray-50"
             />
           </div>
           <div className="relative">
@@ -91,7 +104,7 @@ export default function LoginModal({ open, onClose }: { open: boolean; onClose: 
               placeholder="********"
               required
               disabled={loading}
-              className="w-full rounded-lg border px-4 py-3 focus:border-blue-400 outline-none mt-1 pr-10"
+              className="w-full rounded-xl border px-4 py-3 focus:border-blue-400 outline-none mt-1 pr-10 bg-gray-50"
             />
             <button
               type="button"
@@ -102,12 +115,10 @@ export default function LoginModal({ open, onClose }: { open: boolean; onClose: 
               aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
             >
               {showPassword ? (
-                // Eye Off SVG
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-5 0-9-3.33-9-7.5a9.98 9.98 0 012.523-5.982M8.5 8.5a3 3 0 114.243 4.243M9.75 9.75a3 3 0 013.808 3.808M3 3l18 18" />
                 </svg>
               ) : (
-                // Eye SVG
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.478 0-8.268-2.943-9.542-7z" />
@@ -122,6 +133,7 @@ export default function LoginModal({ open, onClose }: { open: boolean; onClose: 
               onChange={e => setSetuju(e.target.checked)}
               disabled={loading}
               required
+              className="accent-blue-600 w-4 h-4 rounded border-gray-300"
             />
             <span>
               Saya setuju dengan{" "}
@@ -134,7 +146,10 @@ export default function LoginModal({ open, onClose }: { open: boolean; onClose: 
           <button
             type="submit"
             disabled={loading}
-            className="w-full min-h-[48px] bg-gradient-to-r from-blue-600 to-green-400 text-white font-bold py-3 rounded-lg shadow hover:opacity-95 transition flex items-center justify-center gap-2"
+            className={`w-full min-h-[48px] rounded-xl font-bold py-3 flex items-center justify-center gap-2 transition
+              ${loading
+                ? "bg-blue-200 text-white cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700 text-white shadow"}`}
           >
             {loading && (
               <svg className="animate-spin h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24">
@@ -146,7 +161,7 @@ export default function LoginModal({ open, onClose }: { open: boolean; onClose: 
           </button>
         </form>
 
-        <div className="flex justify-between w-full mt-4 text-sm">
+        <div className="flex justify-between w-full mt-4 text-sm flex-wrap gap-y-2">
           <Link
             href="/daftar"
             className="text-blue-600 hover:underline font-semibold"
@@ -174,7 +189,7 @@ export default function LoginModal({ open, onClose }: { open: boolean; onClose: 
             type="button"
             onClick={() => signIn("google")}
             disabled={loading}
-            className="w-full border border-gray-300 rounded-lg py-3 font-semibold flex items-center justify-center gap-3 hover:bg-gray-50 transition bg-white"
+            className="w-full border border-gray-300 rounded-xl py-3 font-semibold flex items-center justify-center gap-3 hover:bg-gray-50 transition bg-white"
           >
             <FcGoogle className="w-6 h-6" /> Masuk dengan Google
           </button>
@@ -182,7 +197,7 @@ export default function LoginModal({ open, onClose }: { open: boolean; onClose: 
             type="button"
             onClick={() => alert("Login dengan Apple coming soon!")}
             disabled={loading}
-            className="w-full border border-gray-300 rounded-lg py-3 font-semibold flex items-center justify-center gap-3 hover:bg-gray-100 transition bg-black text-white"
+            className="w-full border border-gray-300 rounded-xl py-3 font-semibold flex items-center justify-center gap-3 hover:bg-gray-100 transition bg-black text-white"
           >
             <FaApple className="w-5 h-5" /> Masuk dengan Apple
           </button>

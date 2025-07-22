@@ -1,8 +1,14 @@
-// components/Toast.tsx
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import PropTypes from "prop-types";
 
-export default function Toast({ show, message, onHide }) {
+interface ToastProps {
+  show: boolean;
+  message: string;
+  onHide: () => void;
+}
+
+export default function Toast({ show, message, onHide }: ToastProps) {
   useEffect(() => {
     if (show) {
       const t = setTimeout(() => {
@@ -29,3 +35,10 @@ export default function Toast({ show, message, onHide }) {
     </AnimatePresence>
   );
 }
+
+// Prop validation untuk JavaScript (boleh tetap dipakai)
+Toast.propTypes = {
+  show: PropTypes.bool.isRequired,
+  message: PropTypes.string.isRequired,
+  onHide: PropTypes.func.isRequired,
+};

@@ -1,33 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import BookingPopup from "@/components/BookingPopup";
-import Link from "next/link";
-import { MapPin } from "lucide-react";
 import ChatModal from "@/components/ChatModal";
-import Image from "next/image";
-
-const categories = ["Semua", "Kamera", "Drone", "Laptop", "Camping", "Motor"];
-const locations = [
-  "Semua", "Jakarta", "Bandung", "Bogor", "Surabaya", "Bali", "Palembang", "Batam",
-];
-const hargaRanges = [
-  { label: "Semua", min: 0, max: Infinity },
-  { label: "< Rp100.000", min: 0, max: 100000 },
-  { label: "Rp100.000 - Rp150.000", min: 100000, max: 150000 },
-  { label: "> Rp150.000", min: 150000, max: Infinity },
-];
-
-function formatRupiah(num: number) {
-  return "Rp " + num.toLocaleString("id-ID") + "/hari";
-}
+import FilterBar from "@/components/FilterBar";
+import BarangCard from "@/components/BarangCard";
+import SkeletonBarangCard from "@/components/SkeletonBarangCard";
 
 interface Product {
   id: string;
   nama: string;
   foto: string[];
   harga: number;
+  harga_promo?: number;
+  promo?: boolean;
   kategori?: string;
   lokasi: string;
   alamat?: string;
@@ -36,25 +24,45 @@ interface Product {
   pemilik_foto?: string;
   user_id?: string;
   whatsapp?: string;
+  distance?: number;
+  status?: string;
   [key: string]: unknown;
 }
 
+// Slug-to-Category mapping
+const kategoriMap: Record<string, string> = {
+  "kamera-elektronik": "Kamera & Elektronik",
+  "handphone-gadget": "Handphone & Gadget",
+  "laptop-komputer": "Laptop & Komputer",
+  "kendaraan": "Kendaraan",
+  "properti": "Properti",
+};
+
 export default function CariBarangPage() {
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<string>("Semua");
   const [selectedLocation, setSelectedLocation] = useState<string>("Semua");
   const [selectedHarga, setSelectedHarga] = useState<string>("Semua");
+  const [selectedStatus, setSelectedStatus] = useState<string>("Semua Status");
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+
+  // Harga range (untuk filter min/max harga)
+  const [minHarga, setMinHarga] = useState<number>(0);
+  const [maxHarga, setMaxHarga] = useState<number>(5000000);
 
   const [openBooking, setOpenBooking] = useState<boolean>(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  const [lightbox, setLightbox] = useState<{ urls: string[]; index: number } | null>(null);
-
   const [chatOpen, setChatOpen] = useState<boolean>(false);
   const [chatBarang, setChatBarang] = useState<Product | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+
+  // Nearby states
+  const [nearby, setNearby] = useState(false);
+  const [isFetchingNearby, setIsFetchingNearby] = useState(false);
+  const nearbyCoords = useRef<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then((res) => {
@@ -62,28 +70,100 @@ export default function CariBarangPage() {
     });
   }, []);
 
+  // Auto-activate filter category from URL
   useEffect(() => {
-    async function fetchBarang() {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("barang")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (!error) setProducts((data as Product[]) || []);
-      setLoading(false);
+    const kategoriSlug = searchParams.get("kategori");
+    if (kategoriSlug && kategoriMap[kategoriSlug]) {
+      setSelectedCategory(kategoriMap[kategoriSlug]);
     }
-    fetchBarang();
+    // You can also add other param auto-filter if needed!
+    // Example: lokasi, harga, status (tinggal extend mapping)
+  }, [searchParams]);
+
+  // Fetch semua barang
+  const fetchAllBarang = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("barang")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (!error) setProducts((data as Product[]) || []);
+    setLoading(false);
+  };
+
+  // Fetch barang terdekat
+  async function fetchNearbyBarang() {
+    setIsFetchingNearby(true);
+    if (!navigator.geolocation) {
+      alert("Perangkat tidak mendukung lokasi!");
+      setIsFetchingNearby(false);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        nearbyCoords.current = { lat, lng };
+        const { data, error } = await supabase.rpc("get_barang_terdekat", {
+          user_lat: lat,
+          user_lng: lng,
+          max_distance: 50,
+        });
+        if (!error) setProducts((data as Product[]) || []);
+        setIsFetchingNearby(false);
+        setLoading(false);
+      },
+      () => {
+        alert("Tidak dapat mengambil lokasi Anda.");
+        setNearby(false);
+        setIsFetchingNearby(false);
+        setLoading(false);
+      }
+    );
+  }
+
+  // Handler checkbox nearby
+  const handleNearbyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked;
+    setNearby(checked);
+    if (checked) {
+      setLoading(true);
+      fetchNearbyBarang();
+    } else {
+      fetchAllBarang();
+    }
+  };
+
+  useEffect(() => {
+    fetchAllBarang();
   }, []);
 
+  // Filtering
   const filtered = products.filter((p) =>
     (selectedCategory === "Semua" || p.kategori === selectedCategory) &&
     (selectedLocation === "Semua" || p.lokasi === selectedLocation) &&
+    (selectedStatus === "Semua Status" || (p.status || "Tersedia") === selectedStatus) &&
     (selectedHarga === "Semua" ||
-      (p.harga >= hargaRanges.find((h) => h.label === selectedHarga)!.min &&
-        p.harga <= hargaRanges.find((h) => h.label === selectedHarga)!.max)) &&
-    ((p.nama?.toLowerCase().includes(search.toLowerCase())) ||
+      (
+        p.harga >= (
+          selectedHarga === "< Rp100.000" ? 0 :
+          selectedHarga === "Rp100.000 - Rp150.000" ? 100000 :
+          selectedHarga === "> Rp150.000" ? 150000 : 0
+        ) &&
+        p.harga <= (
+          selectedHarga === "< Rp100.000" ? 100000 :
+          selectedHarga === "Rp100.000 - Rp150.000" ? 150000 :
+          selectedHarga === "> Rp150.000" ? Infinity : Infinity
+        )
+      )
+    ) &&
+    // Filter by harga min/max slider
+    (p.harga >= minHarga && p.harga <= maxHarga) &&
+    (
+      (p.nama?.toLowerCase().includes(search.toLowerCase())) ||
       (p.lokasi?.toLowerCase().includes(search.toLowerCase())) ||
-      (p.pemilik_nama?.toLowerCase().includes(search.toLowerCase())))
+      (p.pemilik_nama?.toLowerCase().includes(search.toLowerCase()))
+    )
   );
 
   const handleSewaClick = (product: Product) => {
@@ -91,170 +171,74 @@ export default function CariBarangPage() {
     setOpenBooking(true);
   };
 
-  const handleChatClick = (product: Product) => {
-    setChatBarang(product);
-    setChatOpen(true);
+  // Favorite & share (mock, bisa dikembangkan)
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const toggleFavorite = (id: string) => {
+    setFavoriteIds((prev) =>
+      prev.includes(id) ? prev.filter((fid) => fid !== id) : [...prev, id]
+    );
   };
 
   return (
-    <main className="min-h-screen bg-blue-50/60 pt-28 px-2 sm:px-4 lg:px-8">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl md:text-4xl font-bold text-center text-blue-700 mb-8">
+    <main className="min-h-screen bg-gradient-to-b from-[#f5faff] to-[#f0f6ff] pt-28 px-2 sm:px-4 lg:px-8">
+      <div className="max-w-7xl mx-auto w-full">
+        {/* Judul */}
+        <h1 className="text-3xl md:text-4xl font-extrabold text-center text-blue-700 mb-10 drop-shadow-sm tracking-tight">
           Cari Barang Sewa
         </h1>
+        {/* FILTER BAR */}
+        <FilterBar
+          search={search}
+          setSearch={setSearch}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+          selectedLocation={selectedLocation}
+          setSelectedLocation={setSelectedLocation}
+          selectedHarga={selectedHarga}
+          setSelectedHarga={setSelectedHarga}
+          selectedStatus={selectedStatus}
+          setSelectedStatus={setSelectedStatus}
+          minHarga={minHarga}
+          setMinHarga={setMinHarga}
+          maxHarga={maxHarga}
+          setMaxHarga={setMaxHarga}
+          nearby={nearby}
+          isFetchingNearby={isFetchingNearby}
+          handleNearbyChange={handleNearbyChange}
+          onReset={() => {
+            setSearch("");
+            setSelectedCategory("Semua");
+            setSelectedLocation("Semua");
+            setSelectedHarga("Semua");
+            setSelectedStatus("Semua Status");
+            setMinHarga(0);
+            setMaxHarga(5000000);
+            setNearby(false);
+            fetchAllBarang();
+          }}
+        />
 
-        {/* Filters */}
-        <div className="bg-white rounded-xl shadow p-4 flex flex-col md:flex-row items-center gap-2 max-w-4xl mx-auto mb-6">
-          <input
-            type="text"
-            placeholder="Cari nama barang, lokasi, atau pemilik…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400"
-          />
-          <select
-            value={selectedCategory}
-            onChange={e => setSelectedCategory(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400"
-          >
-            {categories.map((cat) => (
-              <option key={cat}>{cat}</option>
-            ))}
-          </select>
-          <select
-            value={selectedLocation}
-            onChange={e => setSelectedLocation(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400"
-          >
-            {locations.map((loc) => (
-              <option key={loc}>{loc}</option>
-            ))}
-          </select>
-          <select
-            value={selectedHarga}
-            onChange={e => setSelectedHarga(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400"
-          >
-            {hargaRanges.map((h) => (
-              <option key={h.label}>{h.label}</option>
-            ))}
-          </select>
-          <button
-            onClick={() => {
-              setSearch("");
-              setSelectedCategory("Semua");
-              setSelectedLocation("Semua");
-              setSelectedHarga("Semua");
-            }}
-            className="text-sm text-blue-600 underline"
-          >
-            Reset Filter
-          </button>
-        </div>
-
-        {/* Lightbox */}
-        {lightbox && (
-          <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-            <div className="relative w-full max-w-3xl p-4">
-              <button
-                onClick={() => setLightbox(null)}
-                className="absolute top-2 right-2 text-white text-3xl"
-              >
-                &times;
-              </button>
-              <div className="overflow-hidden rounded-lg">
-                <Image
-                  src={lightbox.urls[lightbox.index]}
-                  alt={`Foto ${lightbox.index + 1}`}
-                  className="w-full h-auto max-h-[80vh] object-contain"
-                  width={900}
-                  height={600}
-                  unoptimized
-                />
-              </div>
-              {lightbox.urls.length > 1 && (
-                <div className="mt-4 flex justify-between">
-                  <button
-                    onClick={() =>
-                      setLightbox({
-                        urls: lightbox.urls,
-                        index: (lightbox.index - 1 + lightbox.urls.length) % lightbox.urls.length,
-                      })
-                    }
-                    className="px-4 py-2 bg-white rounded shadow"
-                  >
-                    Sebelumnya
-                  </button>
-                  <button
-                    onClick={() =>
-                      setLightbox({
-                        urls: lightbox.urls,
-                        index: (lightbox.index + 1) % lightbox.urls.length,
-                      })
-                    }
-                    className="px-4 py-2 bg-white rounded shadow"
-                  >
-                    Selanjutnya
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Product Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {/* PRODUCT GRID */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 mt-10">
           {loading ? (
             Array.from({ length: 8 }).map((_, idx) => (
-              <div key={idx} className="h-80 bg-gray-200 animate-pulse rounded-xl" />
+              <SkeletonBarangCard key={idx} />
             ))
           ) : filtered.length > 0 ? (
-            filtered.map((product) => {
-              const fotos = Array.isArray(product.foto) ? product.foto : [];
-              const urls = fotos.map((raw: string) =>
-                raw.startsWith("http")
-                  ? raw
-                  : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/barang-foto/${raw}`
-              );
-
-              return (
-                <div
-                  key={product.id}
-                  className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition flex flex-col"
-                >
-                  <Link href={`/barang/${product.id}`}>
-                    <div className="relative h-48 w-full">
-                      <Image
-                        src={urls[0] || "/placeholder.png"}
-                        alt={product.nama}
-                        fill
-                        className="object-cover"
-                        unoptimized
-                      />
-                    </div>
-                  </Link>
-                  <div className="p-4 flex-1 flex flex-col justify-between">
-                    <div>
-                      <h2 className="text-lg font-semibold">{product.nama}</h2>
-                      <p className="flex items-center text-sm text-gray-500 mt-1">
-                        <MapPin className="mr-1 w-4 h-4" /> {product.lokasi}
-                      </p>
-                    </div>
-                    <div className="mt-3 flex items-center justify-between">
-                      <span className="font-bold">{formatRupiah(product.harga)}</span>
-                      <button
-                        onClick={() => handleSewaClick(product)}
-                        className="px-3 py-1 bg-blue-600 text-white rounded"
-                      >
-                        Sewa
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })
+            filtered.map((product) => (
+              <BarangCard
+                key={product.id}
+                item={product}
+                nearby={nearby}
+                toggleFavorite={toggleFavorite}
+                isFavorite={favoriteIds.includes(product.id)}
+                onSewaClick={handleSewaClick}
+              />
+            ))
           ) : (
-            <p className="col-span-full text-center text-gray-500">Tidak ada barang ditemukan.</p>
+            <p className="col-span-full text-center text-gray-400 py-16 text-lg font-semibold">
+              Tidak ada barang ditemukan.
+            </p>
           )}
         </div>
 

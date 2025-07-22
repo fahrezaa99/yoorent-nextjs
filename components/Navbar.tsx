@@ -1,13 +1,13 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Menu, X, LayoutDashboard } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Menu, X, LayoutDashboard, Bell } from "lucide-react";
 import LoginModal from "./LoginModal";
 import RegisterModal from "./RegisterModal";
 import { supabase } from "@/lib/supabaseClient";
 import YooRentLogo from "./YooRentLogo";
 import Image from "next/image";
+import UserAvatar from "./UserAvatar"; // <--- Tambah ini
 
 interface UserMeta {
   avatar_url?: string;
@@ -27,6 +27,9 @@ export default function Navbar() {
   // Untuk user dropdown
   const [showMenu, setShowMenu] = useState<boolean>(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Dummy Notifikasi: Ganti pakai fetch dari backend/unread chat/notif sewa dsb
+  const [notifCount, setNotifCount] = useState<number>(2);
 
   // Sticky & shadow on scroll
   const [scrolled, setScrolled] = useState<boolean>(false);
@@ -81,6 +84,7 @@ export default function Navbar() {
     setMobileOpen(false);
   };
 
+  // Modal TANPA animasi
   function Modal({
     open,
     onClose,
@@ -96,11 +100,7 @@ export default function Navbar() {
         className="fixed inset-0 bg-black/40 z-[99] flex items-center justify-center"
         onClick={onClose}
       >
-        <motion.div
-          initial={{ scale: 0.92, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.92, opacity: 0 }}
-          transition={{ duration: 0.2 }}
+        <div
           className="bg-white rounded-2xl shadow-xl max-w-xs w-full p-7 relative"
           onClick={(e) => e.stopPropagation()}
         >
@@ -113,33 +113,33 @@ export default function Navbar() {
             <X className="w-6 h-6" />
           </button>
           {children}
-        </motion.div>
+        </div>
       </div>
     );
   }
 
   // Komponen Dropdown User
   const UserDropdown = () => (
-    <div className="relative ml-3" ref={menuRef}>
+    <div className="relative ml-3 flex items-center gap-1" ref={menuRef}>
+      {/* Bell Notifikasi Desktop */}
+      <button
+        className="relative group hidden md:block mr-1"
+        aria-label="Notifikasi"
+        type="button"
+      >
+        <Bell className="w-6 h-6 text-white group-hover:text-blue-200 transition" />
+        {notifCount > 0 && (
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full px-1.5">
+            {notifCount}
+          </span>
+        )}
+      </button>
       <button
         onClick={() => setShowMenu((v) => !v)}
         className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-2 py-1.5 rounded-full transition min-w-[44px]"
         type="button"
       >
-        <span className="w-9 h-9 rounded-full bg-blue-400 flex items-center justify-center text-lg font-bold text-white overflow-hidden">
-          {user?.user_metadata?.avatar_url ? (
-            <Image
-              src={user.user_metadata.avatar_url}
-              alt="User"
-              className="w-9 h-9 rounded-full object-cover"
-              width={36}
-              height={36}
-              unoptimized
-            />
-          ) : (
-            (user?.email?.[0] ?? "U").toUpperCase()
-          )}
-        </span>
+        <UserAvatar user={user} size={36} />
         <span className="font-semibold text-white max-w-[110px] truncate hidden md:inline">
           {user?.user_metadata?.full_name || user?.email}
         </span>
@@ -148,7 +148,7 @@ export default function Navbar() {
         </svg>
       </button>
       {showMenu && (
-        <div className="absolute right-0 mt-2 w-56 bg-white shadow-xl rounded-xl z-50 border overflow-hidden animate-fade-in-up">
+        <div className="absolute right-0 top-full w-56 bg-white shadow-xl rounded-xl z-50 border overflow-hidden mt-2">
           <div className="p-4 border-b">
             <div className="font-semibold text-gray-900">
               {user?.user_metadata?.full_name || "User"}
@@ -184,10 +184,7 @@ export default function Navbar() {
   return (
     <>
       {/* ===== Navbar ===== */}
-      <motion.nav
-        initial={{ y: -25, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.4 }}
+      <nav
         className={`bg-[#001F3F] w-full fixed top-0 left-0 z-50 transition-shadow duration-300 ${scrolled ? "shadow-lg" : "shadow-none"
           }`}
       >
@@ -246,16 +243,18 @@ export default function Navbar() {
               <UserDropdown />
             ) : (
               <>
+                {/* Tombol Masuk (outline biru, modern, rounded) */}
                 <button
                   onClick={() => setOpenLogin(true)}
-                  className="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-black bg-white border border-gray-300 hover:bg-gray-200 transition hidden md:inline-block"
+                  className="px-4 py-2 rounded-2xl font-semibold border-2 border-blue-600 text-blue-600 bg-white hover:bg-blue-50 transition-all duration-150 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-200 hidden md:inline-block"
                   type="button"
                 >
                   Masuk
                 </button>
+                {/* Tombol Daftar (solid biru, lebih menonjol, rounded) */}
                 <button
                   onClick={() => setOpenRegister(true)}
-                  className="ml-2 px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-white bg-gradient-to-r from-blue-600 to-green-400 hover:from-blue-700 hover:to-green-500 transition hidden md:inline-block shadow"
+                  className="ml-3 px-4 py-2 rounded-2xl font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-all duration-150 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-300 hidden md:inline-block"
                   disabled={openRegister}
                   type="button"
                 >
@@ -282,129 +281,135 @@ export default function Navbar() {
         </div>
 
         {/* Mobile Drawer */}
-        <AnimatePresence>
-          {mobileOpen && (
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", stiffness: 300, damping: 35 }}
-              className="fixed inset-0 z-50 bg-black/40 md:hidden"
-              onClick={() => setMobileOpen(false)}
-            >
-              <div
-                className="absolute top-0 right-0 w-4/5 max-w-xs h-full
+        {mobileOpen && (
+          <div
+            className="fixed inset-0 z-50 bg-black/40 md:hidden"
+            onClick={() => setMobileOpen(false)}
+          >
+            <div
+              className="absolute top-0 right-0 w-4/5 max-w-xs h-full
                   bg-[#11213a] shadow-2xl flex flex-col px-6 py-5 gap-6"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <ul className="flex flex-col gap-4 mt-6 text-white text-lg font-semibold">
-                  <li>
-                    <a
-                      href="/"
-                      onClick={handleScrollToTop}
-                      className="hover:text-green-400 transition"
-                    >
-                      Beranda
-                    </a>
-                  </li>
-                  <li>
-                    <Link href="/kategori" className="hover:text-green-400 transition">
-                      Kategori
-                    </Link>
-                  </li>
-                  <li>
-                    <a
-                      href="#carakerja"
-                      onClick={handleScroll("carakerja")}
-                      className="hover:text-green-400 transition"
-                    >
-                      Cara Kerja
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#testimoni"
-                      onClick={handleScroll("testimoni")}
-                      className="hover:text-green-400 transition"
-                    >
-                      Testimoni
-                    </a>
-                  </li>
-                </ul>
-                <div className="mt-8 flex flex-col gap-3">
-                  {user ? (
-                    <>
-                      <Link
-                        href="/dashboard"
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold text-[#001F3F] bg-white border border-gray-300 hover:bg-gray-100 transition"
-                        title="Dashboard"
-                        onClick={() => setMobileOpen(false)}
-                      >
-                        <LayoutDashboard className="w-5 h-5" />
-                        Dashboard
-                      </Link>
-                      <button
-                        onClick={async () => {
-                          await supabase.auth.signOut();
-                          window.location.href = "/";
-                        }}
-                        className="w-full px-4 py-2 rounded-lg font-semibold text-white bg-red-500 hover:bg-red-600 transition"
-                        type="button"
-                      >
-                        Logout
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => setOpenLogin(true)}
-                        className="w-full px-4 py-2 rounded-lg font-medium text-black bg-white border border-gray-300 hover:bg-gray-200 transition"
-                        type="button"
-                      >
-                        Masuk
-                      </button>
-                      <button
-                        onClick={() => setOpenRegister(true)}
-                        className="w-full px-4 py-2 rounded-lg font-medium text-white bg-gradient-to-r from-blue-600 to-green-400 hover:from-blue-700 hover:to-green-500 transition mt-2 shadow"
-                        disabled={openRegister}
-                        type="button"
-                      >
-                        {openRegister ? (
-                          <svg className="animate-spin h-5 w-5 mr-2 inline" viewBox="0 0 24 24">
-                            <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-70" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                          </svg>
-                        ) : null}
-                        Daftar
-                      </button>
-                    </>
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Bell Notif Mobile */}
+              {user && (
+                <button className="relative group self-end mb-2 md:hidden" aria-label="Notifikasi">
+                  <Bell className="w-6 h-6 text-white group-hover:text-blue-200 transition" />
+                  {notifCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full px-1.5">
+                      {notifCount}
+                    </span>
                   )}
-                </div>
+                </button>
+              )}
+              <ul className="flex flex-col gap-4 mt-6 text-white text-lg font-semibold">
+                <li>
+                  <a
+                    href="/"
+                    onClick={handleScrollToTop}
+                    className="hover:text-green-400 transition"
+                  >
+                    Beranda
+                  </a>
+                </li>
+                <li>
+                  <Link href="/kategori" className="hover:text-green-400 transition">
+                    Kategori
+                  </Link>
+                </li>
+                <li>
+                  <a
+                    href="#carakerja"
+                    onClick={handleScroll("carakerja")}
+                    className="hover:text-green-400 transition"
+                  >
+                    Cara Kerja
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#testimoni"
+                    onClick={handleScroll("testimoni")}
+                    className="hover:text-green-400 transition"
+                  >
+                    Testimoni
+                  </a>
+                </li>
+              </ul>
+              <div className="mt-8 flex flex-col gap-3">
+                {user ? (
+                  <>
+                    <Link
+                      href="/dashboard"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-2xl font-semibold text-[#001F3F] bg-white border border-gray-300 hover:bg-gray-100 transition"
+                      title="Dashboard"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      <LayoutDashboard className="w-5 h-5" />
+                      Dashboard
+                    </Link>
+                    <button
+                      onClick={async () => {
+                        await supabase.auth.signOut();
+                        window.location.href = "/";
+                      }}
+                      className="w-full px-4 py-2 rounded-2xl font-semibold text-white bg-red-500 hover:bg-red-600 transition"
+                      type="button"
+                    >
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    {/* Tombol Masuk Mobile */}
+                    <button
+                      onClick={() => setOpenLogin(true)}
+                      className="w-full px-4 py-2 rounded-2xl font-semibold border-2 border-blue-600 text-blue-600 bg-white hover:bg-blue-50 transition-all duration-150 shadow-sm"
+                      type="button"
+                    >
+                      Masuk
+                    </button>
+                    {/* Tombol Daftar Mobile */}
+                    <button
+                      onClick={() => setOpenRegister(true)}
+                      className="w-full px-4 py-2 rounded-2xl font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-all duration-150 shadow-md mt-2"
+                      disabled={openRegister}
+                      type="button"
+                    >
+                      {openRegister ? (
+                        <svg className="animate-spin h-5 w-5 mr-2 inline" viewBox="0 0 24 24">
+                          <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-70" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                        </svg>
+                      ) : null}
+                      Daftar
+                    </button>
+                  </>
+                )}
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.nav>
+            </div>
+          </div>
+        )}
+      </nav>
 
       {/* Login & Register Modals */}
-      <AnimatePresence>
-        {openLogin && (
-          <Modal open={openLogin} onClose={() => setOpenLogin(false)}>
-            <LoginModal
-              open={openLogin}
-              onClose={() => setOpenLogin(false)}
-            />
-          </Modal>
-        )}
-        {openRegister && (
-          <Modal open={openRegister} onClose={() => setOpenRegister(false)}>
-            <RegisterModal
-              open={openRegister}
-              onClose={() => setOpenRegister(false)}
-            />
-          </Modal>
-        )}
-      </AnimatePresence>
+      {openLogin && (
+        <Modal open={openLogin} onClose={() => setOpenLogin(false)}>
+          <LoginModal
+            open={openLogin}
+            onClose={() => setOpenLogin(false)}
+            onSuccess={() => setOpenLogin(false)}
+          />
+        </Modal>
+      )}
+      {openRegister && (
+        <Modal open={openRegister} onClose={() => setOpenRegister(false)}>
+          <RegisterModal
+            open={openRegister}
+            onClose={() => setOpenRegister(false)}
+          />
+        </Modal>
+      )}
     </>
   );
 }

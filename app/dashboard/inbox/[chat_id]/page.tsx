@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useParams } from "next/navigation";
-import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
+import EmojiPicker, { EmojiClickData, Theme } from "emoji-picker-react"; // ✅ DIUBAH DI SINI
 import { Paperclip, Loader2, Check, CheckCheck } from "lucide-react";
 import Image from "next/image";
 
@@ -56,13 +56,17 @@ export default function ChatDetailPage() {
   }, [messages]);
 
   useEffect(() => {
-    supabase.auth.getUser().then((res) => {
+    const getUser = async () => {
+      const res = await supabase.auth.getUser();
       setUserId(res.data.user?.id ?? null);
-    });
+    };
+    getUser();
   }, []);
 
   useEffect(() => {
     if (!chat_id) return;
+
+    let channel: ReturnType<typeof supabase.channel> | null = null;
 
     const fetchMsgs = async () => {
       setLoading(true);
@@ -74,7 +78,11 @@ export default function ChatDetailPage() {
       setMessages((data as Message[]) || []);
       setLoading(false);
 
-      if (data && data.some((msg: Message) => msg.receiver_id === userId && !msg.is_read)) {
+      if (
+        data &&
+        userId &&
+        data.some((msg: Message) => msg.receiver_id === userId && !msg.is_read)
+      ) {
         await supabase
           .from("chat")
           .update({ is_read: true })
@@ -84,9 +92,9 @@ export default function ChatDetailPage() {
       }
     };
 
-    fetchMsgs(); // ✅ Panggil async function, tidak return Promise!
+    fetchMsgs();
 
-    const channel = supabase
+    channel = supabase
       .channel("chat-detail")
       .on(
         "postgres_changes",
@@ -108,7 +116,9 @@ export default function ChatDetailPage() {
       )
       .subscribe();
 
-    return () => supabase.removeChannel(channel);
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
   }, [chat_id, userId]);
 
   const handleSend = async (e?: React.FormEvent) => {
@@ -202,7 +212,7 @@ export default function ChatDetailPage() {
           ) : messages.length === 0 ? (
             <div className="text-gray-400 text-center mt-20">Belum ada pesan.</div>
           ) : (
-            messages.map((msg, i) => {
+            messages.map((msg) => {
               const isMine = msg.sender_id === userId;
               return (
                 <div
@@ -259,8 +269,8 @@ export default function ChatDetailPage() {
                       </span>
                       {isMine && (
                         msg.is_read
-                          ? <CheckCheck className="w-4 h-4 ml-1 text-blue-400" title="Read" />
-                          : <Check className="w-4 h-4 ml-1 text-blue-200" title="Sent" />
+                          ? <CheckCheck className="w-4 h-4 ml-1 text-blue-400" />
+                          : <Check className="w-4 h-4 ml-1 text-blue-200" />
                       )}
                     </div>
                   </div>
@@ -298,7 +308,7 @@ export default function ChatDetailPage() {
                 onEmojiClick={handleEmojiClick}
                 width={300}
                 height={350}
-                theme="light"
+                theme={Theme.LIGHT} // ✅ UBAH DI SINI
               />
             </div>
           )}

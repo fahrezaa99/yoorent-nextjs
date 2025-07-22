@@ -4,6 +4,7 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   className?: string;
   loading?: boolean;
   variant?: "primary" | "secondary" | "outline";
+  disabled?: boolean; // ✅ ini ditambahkan
 };
 
 export function Button({
@@ -11,9 +12,9 @@ export function Button({
   className = "",
   loading = false,
   variant = "primary",
+  disabled = false, // ✅ default value biar aman
   ...props
 }: ButtonProps) {
-  // Pilihan styling varian modern
   const base =
     "h-11 px-5 flex items-center justify-center font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400";
   let variantClass = "";
@@ -29,13 +30,12 @@ export function Button({
       "border border-blue-500 text-blue-500 bg-white hover:bg-blue-50";
   }
 
-  // Responsive (max-w untuk HP kecil biar gak terlalu lebar)
   const responsive = "w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg whitespace-nowrap";
 
   return (
     <button
       className={`${base} ${variantClass} ${responsive} ${className}`}
-      disabled={props.disabled || loading}
+      disabled={disabled || loading}
       {...props}
     >
       {loading ? (

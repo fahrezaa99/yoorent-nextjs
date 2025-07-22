@@ -8,10 +8,11 @@ export default function SmoothLayout({ children }: { children: React.ReactNode }
     <AnimatePresence mode="wait">
       <motion.div
         key={pathname}
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -12 }}
-        transition={{ duration: 0.12, ease: "easeInOut" }}
+        initial={{ opacity: 0, x: 100 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -100 }}
+        transition={{ duration: 0.28, ease: "easeInOut" }}
+        style={{ minHeight: "100vh" }}
       >
         {children}
       </motion.div>

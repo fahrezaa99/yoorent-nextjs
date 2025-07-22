@@ -1,8 +1,8 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from '@supabase/supabase-js';
 
-// Ambil environment variable dari .env.local
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-// Bikin instance supabase
+// Pastikan dua env di atas sudah diisi di .env.local
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);

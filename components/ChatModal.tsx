@@ -1,7 +1,8 @@
 "use client";
+
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import EmojiPicker from "emoji-picker-react";
+import EmojiPicker, { Theme } from "emoji-picker-react"; // 🛠️ Fix disini
 import { Paperclip, Loader2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { v4 as uuidv4 } from "uuid";
@@ -40,17 +41,16 @@ export default function ChatModal({
   receiverName,
 }: ChatModalProps) {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
-  const [sendingFile, setSendingFile] = useState<boolean>(false);
-  const [showEmoji, setShowEmoji] = useState<boolean>(false);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [sendingFile, setSendingFile] = useState(false);
+  const [showEmoji, setShowEmoji] = useState(false);
   const [lastSeen, setLastSeen] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
   const [chatId, setChatId] = useState<string | null>(null);
 
-  // Close emoji picker jika klik di luar
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
@@ -61,7 +61,6 @@ export default function ChatModal({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showEmoji]);
 
-  // --- Cari chat_id thread (atau generate jika belum ada)
   useEffect(() => {
     if (!open || !barangId || !userId || !receiverId) return;
     const fetchChatId = async () => {
@@ -69,24 +68,18 @@ export default function ChatModal({
         .from("chat")
         .select("chat_id")
         .eq("barang_id", barangId)
-        .or(
-          `(sender_id.eq.${userId},receiver_id.eq.${receiverId})`
-        )
-        .or(
-          `(sender_id.eq.${receiverId},receiver_id.eq.${userId})`
-        )
+        .or(`(sender_id.eq.${userId},receiver_id.eq.${receiverId})`)
+        .or(`(sender_id.eq.${receiverId},receiver_id.eq.${userId})`)
         .order("created_at", { ascending: true })
         .limit(1);
+
       let threadId = data?.[0]?.chat_id;
-      if (!threadId) {
-        threadId = uuidv4();
-      }
+      if (!threadId) threadId = uuidv4();
       setChatId(threadId);
     };
     fetchChatId();
   }, [open, barangId, userId, receiverId]);
 
-  // Ambil chat history & realtime
   useEffect(() => {
     if (!open || !chatId) return;
     const fetchMessages = async () => {
@@ -95,20 +88,25 @@ export default function ChatModal({
         .select("*")
         .eq("chat_id", chatId)
         .order("created_at", { ascending: true });
+
       setMessages((data as Message[]) ?? []);
       if (data && data.length > 0) {
-        const lastMsg = [...data].reverse().find((m: Message) => m.sender_id === receiverId);
+        const lastMsg = [...data].reverse().find((m) => m.sender_id === receiverId);
         setLastSeen(lastMsg ? lastMsg.created_at : null);
       }
     };
     fetchMessages();
 
-    // Subscribe realtime (Supabase)
     const channel = supabase
       .channel("chat-room")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "chat", filter: `chat_id=eq.${chatId}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "chat",
+          filter: `chat_id=eq.${chatId}`,
+        },
         (payload) => {
           if (payload.eventType === "INSERT") {
             setMessages((prev) => [...prev, payload.new as Message]);
@@ -132,7 +130,6 @@ export default function ChatModal({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, open]);
 
-  // Kirim pesan teks
   const sendMessage = async () => {
     if (!input.trim() || !chatId) return;
     setLoading(true);
@@ -151,7 +148,6 @@ export default function ChatModal({
     setLoading(false);
   };
 
-  // Upload dan kirim file
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !chatId) return;
@@ -161,6 +157,7 @@ export default function ChatModal({
     const { data, error } = await supabase.storage
       .from("chat-files")
       .upload(fileName, file, { upsert: true });
+
     if (!error && data?.path) {
       const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/chat-files/${fileName}`;
       await supabase.from("chat").insert([
@@ -176,6 +173,7 @@ export default function ChatModal({
     } else {
       toast.error("Gagal upload file/gambar");
     }
+
     setSendingFile(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -200,7 +198,6 @@ export default function ChatModal({
     open && (
       <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-2 animate-fadeIn">
         <div className="bg-white rounded-2xl w-full max-w-sm sm:max-w-md mx-auto flex flex-col min-h-[460px] max-h-[90vh] shadow-lg">
-          {/* Header */}
           <div className="flex items-center border-b px-4 py-3">
             <div>
               <h3 className="font-bold text-base">{receiverName || "Pemilik Barang"}</h3>
@@ -208,11 +205,9 @@ export default function ChatModal({
                 {lastSeen ? `Terakhir dilihat: ${formatTime(lastSeen)}` : "Baru saja online"}
               </div>
             </div>
-            <button onClick={onClose} className="ml-auto text-gray-500 hover:text-black text-xl px-1">
-              ×
-            </button>
+            <button onClick={onClose} className="ml-auto text-gray-500 hover:text-black text-xl px-1">×</button>
           </div>
-          {/* Body */}
+
           <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2 bg-gray-50">
             {messages.length === 0 && (
               <div className="text-gray-400 text-center pt-10">Belum ada chat.</div>
@@ -260,7 +255,7 @@ export default function ChatModal({
             })}
             <div ref={bottomRef}></div>
           </div>
-          {/* Footer / Input */}
+
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -268,17 +263,8 @@ export default function ChatModal({
             }}
             className="p-3 border-t flex gap-2 bg-white relative"
           >
-            {/* Tombol emoji */}
-            <button
-              type="button"
-              title="Emoji"
-              className="text-yellow-500 px-1"
-              onClick={() => setShowEmoji((s) => !s)}
-              tabIndex={-1}
-            >
-              😃
-            </button>
-            {/* Popup emoji picker */}
+            <button type="button" title="Emoji" className="text-yellow-500 px-1" onClick={() => setShowEmoji((s) => !s)} tabIndex={-1}>😃</button>
+
             {showEmoji && (
               <div className="absolute bottom-14 left-0 z-50" ref={pickerRef}>
                 <EmojiPicker
@@ -288,11 +274,11 @@ export default function ChatModal({
                   }}
                   width={300}
                   height={350}
-                  theme="light"
+                  theme={"light" as Theme} // ✅ Fix error disini
                 />
               </div>
             )}
-            {/* Tombol file */}
+
             <button
               type="button"
               title="Kirim gambar/file"

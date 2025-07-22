@@ -20,8 +20,6 @@ export default function BookingPopup({
   const [end, setEnd] = useState("");
   const [nama, setNama] = useState("");
   const [kontak, setKontak] = useState("");
-  const [catatan, setCatatan] = useState("");
-  const [ktp, setKtp] = useState<File | null>(null);
   const [syarat, setSyarat] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -33,7 +31,7 @@ export default function BookingPopup({
   };
   const totalHarga = hitungHari() * barang.harga;
 
-  const handleSubmit = (e: any) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!nama || !kontak || !start || !end) {
       alert("Semua data wajib diisi!");
@@ -53,16 +51,11 @@ export default function BookingPopup({
     setEnd("");
     setNama("");
     setKontak("");
-    setCatatan("");
-    setKtp(null);
     setSyarat(false);
     onClose();
   };
 
-  // 🔧 Ambil 1 foto utama jika array
-  const fotoUtama = Array.isArray(barang.foto)
-    ? barang.foto[0]
-    : barang.foto;
+  const fotoUtama = Array.isArray(barang.foto) ? barang.foto[0] : barang.foto;
 
   return (
     <AnimatePresence>
@@ -89,7 +82,7 @@ export default function BookingPopup({
             </button>
             <div className="flex flex-col overflow-y-auto max-h-[98dvh]">
               {!success ? (
-                <>
+                <form onSubmit={handleSubmit} className="p-4 space-y-3">
                   {/* HEADER BARANG */}
                   <div className="flex items-center gap-3 p-4 pb-2 bg-gradient-to-r from-blue-600 via-blue-500 to-green-400 rounded-t-2xl shadow-md">
                     <div className="w-12 h-12 bg-white border-4 border-white shadow rounded-xl overflow-hidden flex items-center justify-center">
@@ -105,17 +98,18 @@ export default function BookingPopup({
                       <div className="font-bold text-base text-white drop-shadow mb-0.5 truncate">
                         {barang.nama}
                       </div>
-                      <div className="text-white/80 text-xs">{barang.lokasi}</div>
+                      <div className="text-white/80 text-xs">
+                        {barang.lokasi}
+                      </div>
                       <div className="font-bold text-[15px] mt-1 text-yellow-300 drop-shadow">
-                        Rp {barang.harga.toLocaleString("id-ID")}/<span className="text-xs">hari</span>
+                        Rp {barang.harga.toLocaleString("id-ID")}/
+                        <span className="text-xs">hari</span>
                       </div>
                     </div>
                   </div>
-                  {/* FORM booking... */}
-                  {/* (kode form tetap seperti sebelumnya, tidak perlu diubah) */}
-                </>
+                  {/* ➕ Tambah form input di sini kalau mau */}
+                </form>
               ) : (
-                // ✅ Booking success view tetap
                 <motion.div
                   initial={{ scale: 0.96, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
@@ -123,17 +117,25 @@ export default function BookingPopup({
                   className="flex flex-col items-center px-4 py-8"
                 >
                   <div className="text-green-500 text-4xl mb-2">✅</div>
-                  <h3 className="font-bold text-xl mb-2 text-center">Booking Berhasil!</h3>
+                  <h3 className="font-bold text-xl mb-2 text-center">
+                    Booking Berhasil!
+                  </h3>
                   <p className="text-center text-gray-600 mb-3 text-sm">
-                    Booking Anda sudah terekam.<br />
+                    Booking Anda sudah terekam.
+                    <br />
                     Kami akan segera menghubungi Anda.
                   </p>
                   <div className="bg-blue-50 rounded-xl p-3 mb-3 w-full text-center">
-                    <div className="text-xs text-gray-500 mb-1">Total Booking</div>
+                    <div className="text-xs text-gray-500 mb-1">
+                      Total Booking
+                    </div>
                     <div className="font-bold text-base text-blue-700 mb-1">
                       Rp {totalHarga.toLocaleString()}
                     </div>
-                    <div className="text-xs text-gray-500">Atas Nama: <span className="font-semibold">{nama}</span></div>
+                    <div className="text-xs text-gray-500">
+                      Atas Nama:{" "}
+                      <span className="font-semibold">{nama}</span>
+                    </div>
                   </div>
                   <button
                     onClick={handleClose}

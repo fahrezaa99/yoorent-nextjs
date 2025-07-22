@@ -15,16 +15,19 @@ const categories = [
   "Lainnya",
 ];
 
+interface CategoryDropdownProps {
+  value?: string;
+  onChange?: (value: string) => void;
+  className?: string;
+}
+
 export default function CategoryDropdown({
   value,
   onChange,
-}: {
-  value?: string;
-  onChange?: (value: string) => void;
-}) {
+  className = "",
+}: CategoryDropdownProps) {
   const [selected, setSelected] = useState(value || categories[0]);
 
-  // Sync with parent state if controlled
   useEffect(() => {
     if (value) setSelected(value);
   }, [value]);
@@ -35,7 +38,7 @@ export default function CategoryDropdown({
   };
 
   return (
-    <div className="w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg">
+    <div className={`w-full ${className}`}>
       <Listbox value={selected} onChange={handleChange}>
         <div className="relative">
           <Listbox.Button
@@ -52,7 +55,9 @@ export default function CategoryDropdown({
               focus:outline-none focus:ring-2 focus:ring-blue-400
               transition
               truncate
-              "
+              text-lg font-semibold
+              min-h-[56px]
+            "
           >
             {selected}
           </Listbox.Button>
@@ -84,7 +89,7 @@ export default function CategoryDropdown({
                   key={category}
                   value={category}
                   className={({ active }) =>
-                    `cursor-pointer select-none px-4 py-2 ${
+                    `cursor-pointer select-none px-4 py-2 text-lg font-semibold min-h-[42px] ${
                       active
                         ? "bg-blue-100 text-blue-800"
                         : "text-gray-800"

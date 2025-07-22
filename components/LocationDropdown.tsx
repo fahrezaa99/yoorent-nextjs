@@ -8,7 +8,17 @@ const locations = [
   "Surabaya",
 ];
 
-export default function LocationDropdown({ value, onChange }: { value?: string; onChange?: (value: string) => void }) {
+interface LocationDropdownProps {
+  value?: string;
+  onChange?: (value: string) => void;
+  className?: string;
+}
+
+export default function LocationDropdown({
+  value,
+  onChange,
+  className = "",
+}: LocationDropdownProps) {
   const [selected, setSelected] = useState(value || locations[0]);
 
   const handleChange = (val: string) => {
@@ -17,10 +27,10 @@ export default function LocationDropdown({ value, onChange }: { value?: string; 
   };
 
   return (
-    <div className="w-full min-w-[130px]">
+    <div className={`w-full min-w-[130px] ${className}`}>
       <Listbox value={selected} onChange={handleChange}>
         <div className="relative">
-          <Listbox.Button className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400 transition">
+          <Listbox.Button className={`w-full rounded-xl border border-gray-200 bg-white px-4 py-2 text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400 transition min-h-[56px] text-lg font-semibold`}>
             {selected}
           </Listbox.Button>
           <Transition
@@ -35,7 +45,7 @@ export default function LocationDropdown({ value, onChange }: { value?: string; 
                   key={location}
                   value={location}
                   className={({ active }) =>
-                    `cursor-pointer select-none px-4 py-2 ${
+                    `cursor-pointer select-none px-4 py-2 text-lg font-semibold min-h-[42px] ${
                       active ? "bg-blue-100 text-blue-800" : "text-gray-800"
                     }`
                   }

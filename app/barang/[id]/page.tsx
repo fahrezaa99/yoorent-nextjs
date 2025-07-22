@@ -65,11 +65,6 @@ export default function ItemDetailPage() {
     ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/barang-foto/${fotos[0]}`
     : "/placeholder.png";
 
-  // ====== Perbaikan Tombol WhatsApp ======
-  const whatsappUrl = item.whatsapp
-    ? `https://wa.me/${item.whatsapp.replace(/^0/, "62")}`
-    : null;
-
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow p-8">
@@ -107,25 +102,8 @@ export default function ItemDetailPage() {
         {item.catatan && (
           <div className="text-sm text-gray-500 mb-4">{item.catatan}</div>
         )}
-        {/* ====== Button WhatsApp, Sudah Aman ====== */}
-        {whatsappUrl ? (
-          <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition shadow"
-          >
-            Booking via WhatsApp
-          </a>
-        ) : (
-          <button
-            disabled
-            className="bg-gray-200 text-gray-400 px-6 py-3 rounded-xl font-semibold cursor-not-allowed"
-            title="Nomor WhatsApp tidak tersedia"
-          >
-            Booking via WhatsApp
-          </button>
-        )}
+        {/* --- Tombol Booking WA SUDAH DIHAPUS --- */}
+
         <Link href="/" className="block mt-6 text-blue-600 underline">← Kembali ke Beranda</Link>
       </div>
     </div>
