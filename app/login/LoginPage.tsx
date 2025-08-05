@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
-import LoginModal from "@/components/LoginModal";
-import LoadingModal from "@/components/LoadingModal";
+import LoginModal from "@/components/common/LoginModal";
+import LoadingModal from "@/components/common/LoadingModal";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {

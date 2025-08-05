@@ -426,14 +426,14 @@ export default function DaftarBarangPage() {
                 <div className="flex gap-2 mt-4 justify-end">
                   <button
                     onClick={() => handleEdit(item)}
-                    className="px-3 py-1 rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 text-sm flex items-center gap-1"
+                    className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 font-semibold flex items-center gap-1 shadow transition"
                   >
                     <span aria-hidden>✏️</span>
                     Edit
                   </button>
                   <button
                     onClick={() => setDeleteId(item.id)}
-                    className="px-3 py-1 rounded-md bg-red-50 text-red-700 hover:bg-red-100 text-sm flex items-center gap-1"
+                    className="px-4 py-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 font-semibold flex items-center gap-1 shadow transition"
                   >
                     <span aria-hidden>🗑️</span>
                     Hapus
@@ -447,4 +447,3 @@ export default function DaftarBarangPage() {
     </div>
   );
 }
-

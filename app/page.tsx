@@ -1,18 +1,19 @@
 "use client";
-import Navbar from "@/components/Navbar";
-import HeroSection from "@/components/HeroSection";
-import PopularCategories from "@/components/PopularCategories";
-import ProductGrid from "@/components/ProductGrid";
-import CTASection from "@/components/CTASection";
-import Testimonials from "@/components/Testimonials";
-import CaraKerjaSection from "@/components/CaraKerjaSection";
-import KeamananBenefitSection from "@/components/KeamananBenefitSection";
-import FAQSection from "@/components/FAQSection";
-import Footer from "@/components/Footer";
+import Navbar from "@/components/common/Navbar";
+import HeroSection from "@/components/common/HeroSection";
+import PopularCategories from "@/components/common/PopularCategories";
+import ProductGrid from "@/components/barang/ProductGrid";
+import CTASection from "@/components/common/CTASection";
+import Testimonials from "@/components/common/Testimonials";
+import CaraKerjaSection from "@/components/common/CaraKerjaSection";
+import KeamananBenefitSection from "@/components/common/KeamananBenefitSection";
+import FAQSection from "@/components/common/FAQSection";
+import Footer from "@/components/common/Footer";
 import { supabase } from "@/lib/supabaseClient";
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
-import PageSlideTransition from "@/components/PageSlideTransition"; // <--- Tambahkan ini
+import PageSlideTransition from "@/components/common/PageSlideTransition"; // <--- Tambahkan ini
+import SafetyBanner from "@/components/common/SafetyBanner";
 
 // --- Komponen BarangList ---
 // ... (tidak berubah, skip untuk ringkas)
@@ -44,6 +45,7 @@ export default function HomePage() {
       --- BarangList bisa diaktifkan kalau ingin tampilkan barang user login di homepage ---
       <BarangList /> 
       */}
+      <SafetyBanner />
       <PopularCategories />
       <ProductGrid />
       <CTASection />

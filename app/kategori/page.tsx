@@ -2,6 +2,15 @@
 
 import { useRouter } from "next/navigation";
 
+// Helper untuk buat slug dari judul kategori
+const toSlug = (title: string) =>
+  title
+    .toLowerCase()
+    .replace(/&/g, "dan")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "")
+    .replace(/--+/g, "-");
+
 interface Category {
   emoji: string;
   title: string;
@@ -9,7 +18,7 @@ interface Category {
 
 export default function KategoriPage() {
   const router = useRouter();
-  // Semua kategori, bisa tambah sesuai kebutuhan
+
   const allCategories: Category[] = [
     { emoji: "📷", title: "Kamera & Elektronik" },
     { emoji: "📱", title: "Handphone & Gadget" },
@@ -21,6 +30,12 @@ export default function KategoriPage() {
     { emoji: "⛺", title: "Outdoor & Camping" },
     { emoji: "🎲", title: "Lainnya" },
   ];
+
+  // Handler klik kategori
+  const handleCategoryClick = (title: string) => {
+    const slug = toSlug(title);
+    router.push(`/kategori/${slug}`);
+  };
 
   return (
     <div className="min-h-[80vh] bg-white px-4 py-16">
@@ -40,15 +55,17 @@ export default function KategoriPage() {
         </h1>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
           {allCategories.map((cat) => (
-            <div
+            <button
               key={cat.title}
-              className="bg-white border rounded-2xl shadow flex flex-col items-center p-6 hover:bg-gradient-to-tr hover:from-blue-200 hover:to-green-100 hover:scale-105 transition-all duration-200 group cursor-pointer"
+              onClick={() => handleCategoryClick(cat.title)}
+              className="bg-white border rounded-2xl shadow flex flex-col items-center p-6 hover:bg-gradient-to-tr hover:from-blue-200 hover:to-green-100 hover:scale-105 transition-all duration-200 group cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-300"
+              type="button"
             >
               <span className="text-5xl mb-3 transition-all duration-200 group-hover:scale-110">{cat.emoji}</span>
-              <span className="font-semibold text-lg group-hover:text-blue-600 transition-all duration-200">
+              <span className="font-semibold text-lg group-hover:text-blue-600 transition-all duration-200 text-center">
                 {cat.title}
               </span>
-            </div>
+            </button>
           ))}
         </div>
       </div>

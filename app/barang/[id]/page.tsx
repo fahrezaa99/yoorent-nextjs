@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { MapPin } from "lucide-react";
-import Image from "next/image";
+import BarangDetailCarousel from "@/components/barang/BarangDetailCarousel";
+import SewaPanel from "@/components/sewa/SewaPanel";
 
 type Barang = {
   id: string;
@@ -17,7 +18,8 @@ type Barang = {
   kondisi?: string;
   deskripsi?: string;
   catatan?: string;
-  whatsapp?: string;
+  syarat?: string;
+  owner?: { nama?: string; lokasi?: string; rating?: number; totalReview?: number; foto?: string };
 };
 
 export default function ItemDetailPage() {
@@ -29,7 +31,7 @@ export default function ItemDetailPage() {
   useEffect(() => {
     const fetchItem = async () => {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("barang")
         .select("*")
         .eq("id", id)
@@ -57,54 +59,71 @@ export default function ItemDetailPage() {
     );
   }
 
-  // Foto barang
-  const fotos: string[] = Array.isArray(item.foto) ? item.foto : [];
-  const fotoUrl = fotos[0]?.startsWith("http")
-    ? fotos[0]
-    : fotos[0]
-    ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/barang-foto/${fotos[0]}`
-    : "/placeholder.png";
+  // Foto barang array, fallback ke placeholder jika kosong
+  const fotos: string[] = Array.isArray(item.foto) && item.foto.length > 0 ? item.foto : ["/placeholder.png"];
 
   return (
-    <div className="bg-gray-50 min-h-screen py-8">
-      <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow p-8">
-        {/* Gambar utama */}
-        <div className="w-full h-72 bg-gray-100 rounded-xl mb-6 relative overflow-hidden">
-          <Image
-            src={fotoUrl}
-            alt={item.nama}
-            fill
-            className="object-contain rounded-xl"
-            sizes="(max-width: 768px) 100vw, 700px"
-            priority
+    <div className="bg-gray-50 min-h-screen py-10">
+      <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-8">
+        {/* KIRI: Detail barang */}
+        <div className="flex-1 min-w-0">
+          <div className="bg-white rounded-2xl shadow p-8 mb-6">
+            {/* Carousel Foto Barang */}
+            <BarangDetailCarousel images={fotos} nama={item.nama} />
+            <h1 className="text-2xl font-bold mt-5 mb-2">{item.nama}</h1>
+            <div className="flex items-center text-gray-600 mb-3 gap-2">
+              <MapPin size={18} className="text-blue-500" />
+              <span className="font-medium">{item.lokasi}</span>
+              {item.alamat && (
+                <span className="text-gray-400 text-xs ml-2">{item.alamat}</span>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-3 mb-3 text-sm">
+              {item.kategori && (
+                <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-lg">{item.kategori}</span>
+              )}
+              {item.kondisi && (
+                <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-lg">Kondisi: {item.kondisi}</span>
+              )}
+            </div>
+            <div className="text-xl font-bold text-blue-600 mb-4">
+              Rp {Number(item.harga).toLocaleString("id-ID")} <span className="text-base font-normal">/hari</span>
+            </div>
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold mb-1">Deskripsi Barang</h2>
+              <p className="text-gray-700">{item.deskripsi || "-"}</p>
+            </div>
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold mb-1">Syarat & Ketentuan Sewa</h2>
+              <ul className="text-gray-600 list-disc ml-5 text-sm leading-7">
+                <li>Barang harus dikembalikan dalam kondisi seperti saat diterima.</li>
+                <li>Penyewa bertanggung jawab atas kehilangan/kerusakan selama masa sewa.</li>
+                <li>Penyerahan/pengembalian di lokasi yang disepakati.</li>
+                <li>Biaya sewa belum termasuk deposit/jaminan (jika ada).</li>
+                <li>Pembatalan kurang dari 24 jam dikenakan biaya 50%.</li>
+                {item.syarat && <li>{item.syarat}</li>}
+              </ul>
+            </div>
+            <Link href="/" className="block mt-4 text-blue-600 underline">← Kembali ke Beranda</Link>
+          </div>
+        </div>
+        {/* KANAN: Panel Booking */}
+        <div className="w-full md:w-[400px]">
+          <SewaPanel 
+            namaBarang={item.nama}
+            hargaPerHari={item.harga}
+            hargaPerMinggu={0}
+            lokasi={item.lokasi}
+            kategori={item.kategori || ""}
+            fotoBarang={fotos[0]}
+            owner={{
+              name: item.owner?.nama || "",
+              rating: item.owner?.rating || 0,
+              total: item.owner?.totalReview || 0,
+              foto: item.owner?.foto || "",
+            }}
           />
         </div>
-        <h1 className="text-2xl font-bold mb-2">{item.nama}</h1>
-        <div className="flex items-center text-gray-600 mb-2 gap-2">
-          <MapPin size={18} className="text-blue-500" />
-          <span className="font-medium">{item.lokasi}</span>
-          {item.alamat && (
-            <span className="text-gray-400 text-xs ml-2">{item.alamat}</span>
-          )}
-        </div>
-        <div className="text-xl font-bold text-blue-600 mb-2">
-          Rp {Number(item.harga).toLocaleString("id-ID")}/hari
-        </div>
-        <div className="mb-3 flex flex-wrap gap-2 text-sm">
-          {item.kategori && (
-            <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-lg">{item.kategori}</span>
-          )}
-          {item.kondisi && (
-            <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-lg">Kondisi: {item.kondisi}</span>
-          )}
-        </div>
-        <p className="text-gray-700 mb-2">{item.deskripsi}</p>
-        {item.catatan && (
-          <div className="text-sm text-gray-500 mb-4">{item.catatan}</div>
-        )}
-        {/* --- Tombol Booking WA SUDAH DIHAPUS --- */}
-
-        <Link href="/" className="block mt-6 text-blue-600 underline">← Kembali ke Beranda</Link>
       </div>
     </div>
   );

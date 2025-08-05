@@ -10,11 +10,6 @@ const categories = [
   "Handphone & Gadget",
   "Laptop & Komputer",
   "Kendaraan",
-  "Properti",
-  "Alat Berat",
-  "Fashion & Aksesoris",
-  "Outdoor & Camping",
-  "Lainnya",
 ];
 
 const conditions = ["Baru", "Sangat Baik", "Baik", "Layak Pakai"];
